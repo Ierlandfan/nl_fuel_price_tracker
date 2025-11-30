@@ -71,6 +71,7 @@ class FuelPriceSensor(CoordinatorEntity, SensorEntity):
         self._is_main = is_main
         self._attr_unique_id = f"{DOMAIN}_{fuel_type}_{location_name}"
         self._attr_name = f"Fuel {FUEL_TYPES.get(fuel_type, fuel_type)} {location_name}"
+        self._attr_entity_registry_enabled_default = True  # Explicitly enable
         
         # Set up device info for grouping
         self._attr_device_info = DeviceInfo(
@@ -168,6 +169,7 @@ class FuelStationSensor(CoordinatorEntity, SensorEntity):
         self._location_name = location_name
         self._index = index
         self._attr_unique_id = f"{DOMAIN}_{fuel_type}_{location_name}_station_{index}"
+        self._attr_entity_registry_enabled_default = True  # Explicitly enable all stations
         
         # Set up device info for grouping (same device as main sensor)
         self._attr_device_info = DeviceInfo(
