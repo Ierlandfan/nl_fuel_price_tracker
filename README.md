@@ -15,10 +15,10 @@ Get **real-time fuel prices** in the Netherlands with automatic **cheapest stati
 1. **Click the badge above** to add to HACS (or add manually via HACS → Custom repositories)
 2. Download the integration and **restart Home Assistant**
 3. **Add Integration**: [![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=nl_fuel_prices)
-4. Configure your location, fuel type, and daily notifications
+4. Configure your location, fuel type, and notifications
 5. Get cheapest fuel prices in your area! ⛽💰
 
-**📖 Need help? See [INSTALLATION.md](INSTALLATION.md) for complete step-by-step guide**
+**📖 See detailed installation steps below**
 
 ---
 
@@ -29,7 +29,6 @@ Get **real-time fuel prices** in the Netherlands with automatic **cheapest stati
 - Euro 98
 - Diesel
 - LPG
-- AdBlue
 - Configurable fuel type per sensor
 
 📍 **Location-Based Search**
@@ -55,10 +54,14 @@ Get **real-time fuel prices** in the Netherlands with automatic **cheapest stati
 - Opening hours
 - Last updated timestamp
 
-🔔 **Smart Notifications**
-- "Cheapest station within 10km changed!"
-- "Price dropped by €0.05 at Shell Ede!"
-- "Your favorite station now cheapest!"
+🔔 **Smart Notifications** (v1.4.0+)
+- Daily price reports at scheduled time
+- Price drop/increase alerts (configurable thresholds)
+- **Enhanced Telegram support**:
+  - 📍 GPS location sharing
+  - 🗺️ Inline navigation buttons (Google Maps)
+  - 🎨 Rich HTML formatting
+  - One-tap navigation to gas stations
 
 ## Available APIs for Dutch Fuel Prices
 
@@ -96,50 +99,129 @@ This integration will use **DirectLease API** (or fallback to others) with:
 
 ## Installation
 
-### HACS (Recommended)
+### Prerequisites
+- Home Assistant 2024.11.0 or newer
+- HACS (Home Assistant Community Store) installed
 
-**Click to add to HACS:**
+### Method 1: One-Click Install (Easiest)
+
+**Click this button:**
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Ierlandfan&repository=nl_fuel_price_tracker&category=integration)
 
-**Or manually:**
+This will:
+1. Add the repository to HACS automatically
+2. Allow you to download the latest version (v1.4.0)
 
-1. Open HACS in Home Assistant
-2. Click the three dots (⋮) in the top right
+After clicking:
+1. Click **"Download"** in HACS
+2. **Restart Home Assistant**
+3. Add the integration (see Configuration below)
+
+### Method 2: Manual HACS Installation
+
+1. **Open HACS** in Home Assistant
+2. Click the **three dots (⋮)** in the top right corner
 3. Select **"Custom repositories"**
-4. Add repository URL: `https://github.com/Ierlandfan/nl_fuel_price_tracker`
-5. Category: **Integration**
-6. Click **"Add"**
-7. Find "Dutch Fuel Prices" in HACS
-8. Click **"Download"**
-9. Restart Home Assistant
-10. Add integration via UI: [![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=nl_fuel_prices)
+4. **Add repository**:
+   - **URL**: `https://github.com/Ierlandfan/nl_fuel_price_tracker`
+   - **Category**: Select **"Integration"**
+5. Click **"Add"**
+6. Search for **"Dutch Fuel Prices"** in HACS
+7. Click **"Download"**
+8. Select **latest version (v1.4.0)**
+9. **Restart Home Assistant**
+10. Continue to Configuration below
 
-### Manual
+### Method 3: Manual Installation (Without HACS)
 
-1. Copy `custom_components/nl_fuel_prices` to your HA config
-2. Restart Home Assistant
-3. Add integration via UI
+1. Download the [latest release](https://github.com/Ierlandfan/nl_fuel_price_tracker/releases/latest)
+2. Extract the zip file
+3. Copy the `custom_components/nl_fuel_prices` folder to your Home Assistant `config/custom_components/` directory
+4. Your folder structure should look like:
+   ```
+   config/
+   └── custom_components/
+       └── nl_fuel_prices/
+           ├── __init__.py
+           ├── manifest.json
+           ├── sensor.py
+           └── ...
+   ```
+5. **Restart Home Assistant**
+6. Continue to Configuration below
 
 ## Configuration
 
-### Via UI (Recommended)
+### Add Integration (After Installation)
 
-1. **Settings** → **Devices & Services** → **Add Integration**
-2. Search for "Dutch Fuel Prices"
-3. Configure:
-   - **Location**: Select Home Assistant zone or enter coordinates
-   - **Fuel Type**: Euro 95, Euro 98, Diesel, LPG, AdBlue
-   - **Radius**: 1-50 km
-   - **Update Interval**: 5-60 minutes
-   - **Notifications**: Enable price alerts
+**One-Click:**
+
+[![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=nl_fuel_prices)
+
+**Or manually:**
+
+1. Go to **Settings** → **Devices & Services**
+2. Click **"+ Add Integration"** (bottom right)
+3. Search for **"Dutch Fuel Prices"**
+4. Click on it to start configuration
+
+### Configuration Options
+
+#### Required Settings:
+- **Postcode**: Dutch postcode (e.g., `1621AB`, `3811AB`, `6711AA`)
+  - Format: 4 digits + 2 letters
+  - Automatically geocoded to exact coordinates
+- **Fuel Type**: Euro 95 (E10), Euro 98, Diesel, or LPG
+- **Radius**: Search radius in km (1-50 km, default: 10 km)
+
+#### Optional Settings:
+- **Update Interval**: How often to check prices (30-120 minutes, default: 60 min)
+- **Scheduled Updates**: Enable specific update times (e.g., 6:00, 12:00, 18:00)
+- **Daily Notification**: Enable daily price reports
+  - **Time**: When to send report (e.g., 08:00)
+  - **Days**: Which days to send (Mon-Sun)
+- **Notification Services**: Select devices/services (mobile app, Telegram, etc.)
+- **Price Change Notifications**: Get alerts when prices change
+  - **Price Drop Threshold**: Minimum drop to trigger alert (default: €0.03)
+  - **Price Increase Threshold**: Minimum increase to trigger alert (default: €0.03)
+
+### Setting Up Telegram Notifications (Optional but Recommended)
+
+To get enhanced Telegram notifications with maps and navigation:
+
+1. **Set up Telegram bot** in Home Assistant:
+   ```yaml
+   # configuration.yaml
+   telegram_bot:
+     - platform: polling
+       api_key: YOUR_BOT_API_KEY  # Get from @BotFather on Telegram
+       allowed_chat_ids:
+         - YOUR_CHAT_ID  # Get from @userinfobot
+   
+   notify:
+     - name: telegram
+       platform: telegram
+       chat_id: YOUR_CHAT_ID
+   ```
+
+2. **Restart Home Assistant**
+
+3. **Configure fuel integration**:
+   - In integration settings, select **"telegram"** as notification service
+   - You'll now get notifications with GPS location, maps, and navigation buttons!
 
 ### Multiple Locations
 
-Add multiple instances for:
-- Home location (5km radius)
-- Work location (10km radius)
-- Favorite route (along highway)
+You can add multiple instances for different locations:
+
+1. Add integration again for each location
+2. Use different postcodes:
+   - **Home**: `1621AB` (Amsterdam) - 5km radius
+   - **Work**: `3811AB` (Amersfoort) - 10km radius
+   - **Parents**: `6711AA` (Ede) - 10km radius
+
+Each instance creates its own set of sensors that are automatically grouped by device.
 
 ## Usage Examples
 
