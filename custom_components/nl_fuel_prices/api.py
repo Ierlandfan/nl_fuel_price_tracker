@@ -23,7 +23,6 @@ FUEL_TYPE_MAP = {
     "euro98": "E5",
     "diesel": "B7",
     "lpg": "LPG",
-    "adblue": "ADBLUE",
 }
 
 
@@ -175,12 +174,11 @@ class FuelPriceAPI:
                         fuel_key = fuel_item.get("key", "").lower()
                         fuel_name = fuel_item.get("name", "")
                         
-                        # Match by key (e.g., "e10" for euro95) or name (e.g., "Euro 95 (E10)")
+                        # Match by key using actual API fuel type keys
                         if (fuel_type == "euro95" and fuel_key == "e10") or \
                            (fuel_type == "euro98" and fuel_key == "euro98") or \
                            (fuel_type == "diesel" and fuel_key == "diesel") or \
-                           (fuel_type == "lpg" and fuel_key == "lpg") or \
-                           (fuel_type == "adblue" and fuel_key == "adblue"):
+                           (fuel_type == "lpg" and fuel_key == "autogas"):
                             price_value = fuel_item.get("price")
                             if price_value and price_value > 0:
                                 # DirectLease returns price in cents per liter (e.g., 1899 = €1.899)

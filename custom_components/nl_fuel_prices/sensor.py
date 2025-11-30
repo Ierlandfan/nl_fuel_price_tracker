@@ -6,6 +6,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.const import CURRENCY_EURO
 
 from . import FuelPriceCoordinator
@@ -70,6 +71,15 @@ class FuelPriceSensor(CoordinatorEntity, SensorEntity):
         self._is_main = is_main
         self._attr_unique_id = f"{DOMAIN}_{fuel_type}_{location_name}"
         self._attr_name = f"Fuel {FUEL_TYPES.get(fuel_type, fuel_type)} {location_name}"
+        
+        # Set up device info for grouping
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"{fuel_type}_{location_name}")},
+            name=f"{location_name} - {FUEL_TYPES.get(fuel_type, fuel_type)}",
+            manufacturer="DirectLease",
+            model="Fuel Price Tracker",
+            entry_type="service",
+        )
         
         # Main sensor is enabled by default, alternative sensors are disabled
         if not is_main:
@@ -163,6 +173,15 @@ class FuelStationSensor(CoordinatorEntity, SensorEntity):
         self._index = index
         self._attr_unique_id = f"{DOMAIN}_{fuel_type}_{location_name}_station_{index}"
         self._attr_entity_registry_enabled_default = False  # Disabled by default
+        
+        # Set up device info for grouping (same device as main sensor)
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"{fuel_type}_{location_name}")},
+            name=f"{location_name} - {FUEL_TYPES.get(fuel_type, fuel_type)}",
+            manufacturer="DirectLease",
+            model="Fuel Price Tracker",
+            entry_type="service",
+        )
 
     @property
     def native_value(self) -> float | None:
