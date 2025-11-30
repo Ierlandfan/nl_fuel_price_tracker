@@ -42,8 +42,8 @@ async def async_setup_entry(
         FuelPriceSensor(coordinator, fuel_type, location_name, is_main=True)
     ]
     
-    # Add sensors for top 5 stations
-    for i in range(5):
+    # Add sensors for alternative stations (stations 1-4, as station 0 is the main/cheapest)
+    for i in range(1, 5):
         sensors.append(
             FuelStationSensor(coordinator, fuel_type, location_name, i)
         )
@@ -80,10 +80,6 @@ class FuelPriceSensor(CoordinatorEntity, SensorEntity):
             model="Fuel Price Tracker",
             entry_type="service",
         )
-        
-        # Main sensor is enabled by default, alternative sensors are disabled
-        if not is_main:
-            self._attr_entity_registry_enabled_default = False
 
     @property
     def native_value(self) -> float | None:
@@ -172,7 +168,6 @@ class FuelStationSensor(CoordinatorEntity, SensorEntity):
         self._location_name = location_name
         self._index = index
         self._attr_unique_id = f"{DOMAIN}_{fuel_type}_{location_name}_station_{index}"
-        self._attr_entity_registry_enabled_default = False  # Disabled by default
         
         # Set up device info for grouping (same device as main sensor)
         self._attr_device_info = DeviceInfo(
