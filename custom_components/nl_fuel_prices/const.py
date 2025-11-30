@@ -23,14 +23,12 @@ FUEL_EURO95 = "euro95"
 FUEL_EURO98 = "euro98"
 FUEL_DIESEL = "diesel"
 FUEL_LPG = "lpg"
-FUEL_ADBLUE = "adblue"
 
 FUEL_TYPES = {
     FUEL_EURO95: "Euro 95 (E10)",
     FUEL_EURO98: "Euro 98",
     FUEL_DIESEL: "Diesel",
     FUEL_LPG: "LPG",
-    FUEL_ADBLUE: "AdBlue",
 }
 
 # API endpoints
