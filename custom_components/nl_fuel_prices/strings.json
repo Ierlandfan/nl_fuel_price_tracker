@@ -20,7 +20,7 @@
         },
         "data_description": {
           "use_town_selector": "Enable to select from Dutch towns, disable for manual coordinates",
-          "town": "Select a Dutch town or city",
+          "town": "Select by postcode or town name (e.g., 1621 or Hoorn)",
           "notify_services": "Select notification services (your mobile devices, etc.)"
         }
       }

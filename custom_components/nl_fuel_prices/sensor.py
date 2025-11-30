@@ -90,6 +90,8 @@ class FuelPriceSensor(CoordinatorEntity, SensorEntity):
             ATTR_TOTAL_STATIONS: self.coordinator.data.get("total_stations", 0),
             ATTR_STATION_ID: cheapest.get("id"),
             "fuel_type": FUEL_TYPES.get(self._fuel_type, self._fuel_type),
+            "location_postcode": self.coordinator.entry.data.get("town_postcode"),
+            "location_province": self.coordinator.entry.data.get("town_province"),
         }
 
     @property

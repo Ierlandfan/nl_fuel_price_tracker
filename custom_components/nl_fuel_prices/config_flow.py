@@ -11,7 +11,7 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 import homeassistant.helpers.config_validation as cv
 
-from .towns import get_town_options, get_town_coords
+from .towns import get_town_options, get_town_coords, get_town_info
 
 from .const import (
     DOMAIN,
@@ -50,9 +50,13 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             
             if use_town and user_input.get("town"):
                 coords = get_town_coords(user_input["town"])
-                if coords:
+                town_info = get_town_info(user_input["town"])
+                if coords and town_info:
                     lat, lon = coords
                     location_name = user_input["town"]
+                    # Store postcode info for display
+                    user_input["town_postcode"] = town_info["postcode"]
+                    user_input["town_province"] = town_info["province"]
                 else:
                     errors["base"] = "invalid_town"
             else:
