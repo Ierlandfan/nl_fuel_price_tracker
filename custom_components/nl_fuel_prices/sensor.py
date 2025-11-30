@@ -70,12 +70,11 @@ class FuelPriceSensor(CoordinatorEntity, SensorEntity):
         self._location_name = location_name
         self._is_main = is_main
         self._attr_unique_id = f"{DOMAIN}_{fuel_type}_{location_name}"
+        self._attr_name = f"Fuel {FUEL_TYPES.get(fuel_type, fuel_type)} {location_name}"
         
-        # Show station name in sensor name
-        if is_main:
-            self._attr_name = f"Fuel {FUEL_TYPES.get(fuel_type, fuel_type)} {location_name}"
-        else:
-            self._attr_name = f"Fuel {FUEL_TYPES.get(fuel_type, fuel_type)} {location_name}"
+        # Main sensor is enabled by default, alternative sensors are disabled
+        if not is_main:
+            self._attr_entity_registry_enabled_default = False
 
     @property
     def native_value(self) -> float | None:

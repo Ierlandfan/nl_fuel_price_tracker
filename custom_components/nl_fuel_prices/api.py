@@ -56,13 +56,26 @@ class FuelPriceAPI:
         - United Consumers API (fallback)
         - Web scraping (last resort)
         """
-        # Mock fuel stations around given coordinates
+        # Generate location-aware mock data
+        # Use generic station names based on position
         stations = [
             {
-                "id": "shell_ede_001",
-                "name": "Shell Ede Centrum",
+                "id": f"station_{int(latitude*1000)}_{int(longitude*1000)}_001",
+                "name": "Tango",
+                "brand": "Tango",
+                "address": f"Stationsweg 1, Near {latitude:.4f}, {longitude:.4f}",
+                "latitude": latitude + 0.005,
+                "longitude": longitude + 0.005,
+                "fuel_type": fuel_type,
+                "price": 1.839,  # EUR per liter (cheapest)
+                "opening_hours": "00:00-23:59",
+                "last_updated": datetime.now().isoformat(),
+            },
+            {
+                "id": f"station_{int(latitude*1000)}_{int(longitude*1000)}_002",
+                "name": "Shell",
                 "brand": "Shell",
-                "address": "Hoofdstraat 123, 6711 AA Ede",
+                "address": f"Hoofdstraat 45, Near {latitude:.4f}, {longitude:.4f}",
                 "latitude": latitude + 0.01,
                 "longitude": longitude + 0.01,
                 "fuel_type": fuel_type,
@@ -71,51 +84,39 @@ class FuelPriceAPI:
                 "last_updated": datetime.now().isoformat(),
             },
             {
-                "id": "bp_veenendaal_002",
-                "name": "BP Veenendaal",
+                "id": f"station_{int(latitude*1000)}_{int(longitude*1000)}_003",
+                "name": "BP",
                 "brand": "BP",
-                "address": "Kerkstraat 45, 3901 AB Veenendaal",
+                "address": f"Kerkstraat 12, Near {latitude:.4f}, {longitude:.4f}",
                 "latitude": latitude + 0.02,
                 "longitude": longitude - 0.01,
                 "fuel_type": fuel_type,
-                "price": 1.879,
-                "opening_hours": "00:00-24:00",
-                "last_updated": datetime.now().isoformat(),
-            },
-            {
-                "id": "tango_wageningen_003",
-                "name": "Tango Wageningen",
-                "brand": "Tango",
-                "address": "Stationsstraat 67, 6701 AM Wageningen",
-                "latitude": latitude - 0.01,
-                "longitude": longitude + 0.02,
-                "fuel_type": fuel_type,
-                "price": 1.839,  # Cheapest!
+                "price": 1.879,  # EUR per liter
                 "opening_hours": "07:00-22:00",
                 "last_updated": datetime.now().isoformat(),
             },
             {
-                "id": "esso_ede_004",
-                "name": "Esso Ede Noord",
+                "id": f"station_{int(latitude*1000)}_{int(longitude*1000)}_004",
+                "name": "Esso",
                 "brand": "Esso",
-                "address": "Verlengde Hoge Veenweg 89, 6717 KK Ede",
-                "latitude": latitude + 0.015,
-                "longitude": longitude + 0.015,
+                "address": f"Dorpsstraat 67, Near {latitude:.4f}, {longitude:.4f}",
+                "latitude": latitude - 0.01,
+                "longitude": longitude + 0.02,
                 "fuel_type": fuel_type,
-                "price": 1.869,
+                "price": 1.869,  # EUR per liter
                 "opening_hours": "06:00-22:00",
                 "last_updated": datetime.now().isoformat(),
             },
             {
-                "id": "texaco_veenendaal_005",
-                "name": "Texaco Veenendaal West",
+                "id": f"station_{int(latitude*1000)}_{int(longitude*1000)}_005",
+                "name": "Texaco",
                 "brand": "Texaco",
-                "address": "Parallelweg 12, 3905 NL Veenendaal",
-                "latitude": latitude + 0.025,
+                "address": f"Industrieweg 89, Near {latitude:.4f}, {longitude:.4f}",
+                "latitude": latitude - 0.015,
                 "longitude": longitude - 0.015,
                 "fuel_type": fuel_type,
-                "price": 1.889,
-                "opening_hours": "00:00-24:00",
+                "price": 1.889,  # EUR per liter
+                "opening_hours": "06:00-23:00",
                 "last_updated": datetime.now().isoformat(),
             },
         ]
