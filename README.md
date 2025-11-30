@@ -18,6 +18,8 @@ Get **real-time fuel prices** in the Netherlands with automatic **cheapest stati
 4. Configure your location, fuel type, and daily notifications
 5. Get cheapest fuel prices in your area! ⛽💰
 
+**📖 Need help? See [INSTALLATION.md](INSTALLATION.md) for complete step-by-step guide**
+
 ---
 
 ## Features
