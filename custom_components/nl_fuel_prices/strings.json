@@ -3,53 +3,50 @@
     "step": {
       "user": {
         "title": "Dutch Fuel Prices Setup",
-        "description": "Configure fuel price monitoring for your location",
+        "description": "Enter your Dutch postcode to find cheapest fuel prices nearby",
         "data": {
-          "use_town_selector": "Use Town Selector",
-          "town": "Select Town/City",
-          "location_name": "Location Name (if manual)",
-          "latitude": "Latitude (manual)",
-          "longitude": "Longitude (manual)",
+          "postcode": "Postcode (e.g. 1621AB)",
           "radius": "Search Radius (km)",
           "fuel_type": "Fuel Type",
           "update_interval": "Update Interval (minutes)",
           "scheduled_updates": "Enable Scheduled Updates",
           "scheduled_update_times": "Update Times",
           "daily_notification": "Enable Daily Notifications",
-          "daily_notification_time": "Daily Notification Time",
-          "daily_notification_days": "Days for Notifications",
-          "notify_services": "Notification Services"
+          "daily_notification_time": "Notification Time",
+          "daily_notification_days": "Notification Days",
+          "notify_services": "Notification Devices"
         },
         "data_description": {
-          "use_town_selector": "Enable to select from Dutch towns, disable for manual coordinates",
-          "town": "Select by postcode or town name (e.g., 1621 or Hoorn)",
-          "update_interval": "Continuous updates every X minutes (uses API quota)",
-          "scheduled_updates": "Update only at specific times (more efficient)",
-          "scheduled_update_times": "Select times to check prices (e.g., 06:00, 12:00, 18:00)",
-          "notify_services": "Type your notification service name (e.g., mobile_app_your_phone_name) or select from list. Find yours in Developer Tools → Services → notify."
+          "postcode": "Dutch postcode format: 1234AB (4 digits + 2 letters)",
+          "radius": "Search for stations within this radius",
+          "notify_services": "Select devices to receive notifications"
         }
       }
     },
     "error": {
-      "invalid_stop": "Invalid station or stop code",
-      "invalid_coordinates": "Invalid coordinates provided",
-      "invalid_town": "Invalid town selected"
+      "invalid_postcode": "Invalid Dutch postcode format. Use 1234AB format (4 digits + 2 letters)",
+      "geocoding_failed": "Could not find location for this postcode. Please check and try again",
+      "cannot_connect": "Failed to connect to geocoding service",
+      "unknown": "Unexpected error occurred"
     },
     "abort": {
-      "already_configured": "This fuel type for this location is already configured"
+      "already_configured": "This fuel type and postcode combination is already configured"
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Fuel Price Options",
+        "title": "Dutch Fuel Prices Options",
+        "description": "Configure fuel price monitoring settings",
         "data": {
           "radius": "Search Radius (km)",
           "update_interval": "Update Interval (minutes)",
+          "scheduled_updates": "Enable Scheduled Updates",
+          "scheduled_update_times": "Update Times",
           "daily_notification": "Enable Daily Notifications",
-          "daily_notification_time": "Daily Notification Time",
-          "daily_notification_days": "Days for Notifications",
-          "notify_services": "Notification Services"
+          "daily_notification_time": "Notification Time",
+          "daily_notification_days": "Notification Days",
+          "notify_services": "Notification Devices"
         }
       }
     }

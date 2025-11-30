@@ -4,14 +4,16 @@ from __future__ import annotations
 from typing import Any
 
 import voluptuous as vol
+import aiohttp
 
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .towns import get_town_options, get_town_coords, get_town_info
+from .geocoding import geocode_postcode, validate_dutch_postcode
 
 from .const import (
     DOMAIN,
@@ -48,68 +50,48 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            # Get coordinates from town selection or manual entry
-            use_town = user_input.get("use_town_selector", True)
+            postcode = user_input.get("postcode", "").strip().upper()
             
-            if use_town and user_input.get("town"):
-                coords = get_town_coords(user_input["town"])
-                town_info = get_town_info(user_input["town"])
-                if coords and town_info:
-                    lat, lon = coords
-                    location_name = user_input["town"]
-                    # Store postcode info for display
-                    user_input["town_postcode"] = town_info["postcode"]
-                    user_input["town_province"] = town_info["province"]
-                else:
-                    errors["base"] = "invalid_town"
+            if not validate_dutch_postcode(postcode):
+                errors["postcode"] = "invalid_postcode"
             else:
-                # Manual coordinates
-                try:
-                    lat = float(user_input[CONF_LOCATION_LAT])
-                    lon = float(user_input[CONF_LOCATION_LON])
-                    location_name = user_input.get("location_name", "Custom")
-                    
-                    if not (-90 <= lat <= 90 and -180 <= lon <= 180):
-                        errors["base"] = "invalid_coordinates"
-                except (ValueError, KeyError):
-                    errors["base"] = "invalid_coordinates"
-
-            if not errors:
-                await self.async_set_unique_id(
-                    f"{DOMAIN}_{user_input[CONF_FUEL_TYPE]}_{location_name}"
-                )
-                self._abort_if_unique_id_configured()
+                session = async_get_clientsession(self.hass)
+                geo_result = await geocode_postcode(session, postcode)
                 
-                return self.async_create_entry(
-                    title=f"{FUEL_TYPES[user_input[CONF_FUEL_TYPE]]} - {location_name}",
-                    data={
-                        **user_input,
-                        "location_name": location_name,
-                        CONF_LOCATION_LAT: lat,
-                        CONF_LOCATION_LON: lon,
-                    },
-                )
+                if not geo_result:
+                    errors["postcode"] = "geocoding_failed"
+                else:
+                    lat = geo_result["latitude"]
+                    lon = geo_result["longitude"]
+                    city = geo_result.get("city", "Unknown")
+                    province = geo_result.get("province", "")
+                    
+                    location_name = f"{postcode} ({city})"
+                    
+                    await self.async_set_unique_id(
+                        f"{DOMAIN}_{user_input[CONF_FUEL_TYPE]}_{postcode}"
+                    )
+                    self._abort_if_unique_id_configured()
+                    
+                    return self.async_create_entry(
+                        title=f"{FUEL_TYPES[user_input[CONF_FUEL_TYPE]]} - {location_name}",
+                        data={
+                            **user_input,
+                            "postcode": postcode,
+                            "location_name": location_name,
+                            "city": city,
+                            "province": province,
+                            CONF_LOCATION_LAT: lat,
+                            CONF_LOCATION_LON: lon,
+                        },
+                    )
 
-        # Get Home Assistant's home location as default
-        home_lat = self.hass.config.latitude
-        home_lon = self.hass.config.longitude
-        
-        # Get available notification services
         notify_services = self._get_notify_services()
 
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({
-                vol.Optional("use_town_selector", default=True): bool,
-                vol.Optional("town"): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=get_town_options(),
-                        mode=selector.SelectSelectorMode.DROPDOWN,
-                    )
-                ),
-                vol.Optional("location_name", default="Home"): str,
-                vol.Optional(CONF_LOCATION_LAT, default=home_lat): cv.latitude,
-                vol.Optional(CONF_LOCATION_LON, default=home_lon): cv.longitude,
+                vol.Required("postcode"): str,
                 vol.Required(CONF_RADIUS, default=DEFAULT_RADIUS): vol.All(
                     vol.Coerce(int), vol.Range(min=1, max=50)
                 ),
@@ -162,9 +144,9 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             }),
             errors=errors,
             description_placeholders={
-                "town_help": "Select a Dutch town/city",
-                "manual_help": "Or enter coordinates manually",
-                "notify_help": "Select notification services (e.g., mobile_app_phone)",
+                "postcode_help": "Enter Dutch postcode (e.g. 1621AB for Hoorn)",
+                "postcode_format": "Format: 1234AB (4 digits + 2 letters)",
+                "notify_help": "Select notification services",
             },
         )
     
@@ -172,7 +154,6 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Get available notification services."""
         services = []
         
-        # Get all services in the notify domain
         try:
             if hasattr(self.hass, 'services') and self.hass.services:
                 all_services = self.hass.services.async_services()
@@ -180,7 +161,6 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     notify_services = all_services["notify"]
                     
                     for service_name in sorted(notify_services.keys()):
-                        # Skip the generic notify service
                         if service_name == "notify":
                             continue
                             
@@ -189,15 +169,13 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             "label": service_name.replace("_", " ").title()
                         })
         except Exception:
-            pass  # Silently fail and use defaults
+            pass
         
-        # Always add common ones (users can type custom values anyway)
         default_services = [
             {"value": "persistent_notification", "label": "Persistent Notification"},
             {"value": "mobile_app", "label": "Mobile App (Generic)"},
         ]
         
-        # Add defaults that aren't already in the list
         existing_values = {s["value"] for s in services}
         for default in default_services:
             if default["value"] not in existing_values:
@@ -226,14 +204,12 @@ class FuelPricesOptionsFlow(config_entries.OptionsFlow):
     ) -> FlowResult:
         """Manage the options."""
         if user_input is not None:
-            # Update config entry data
             self.hass.config_entries.async_update_entry(
                 self.config_entry,
                 data={**self.config_entry.data, **user_input},
             )
             return self.async_create_entry(title="", data={})
         
-        # Get available notification services
         notify_services = self._get_notify_services()
 
         return self.async_show_form(
@@ -314,7 +290,6 @@ class FuelPricesOptionsFlow(config_entries.OptionsFlow):
         """Get available notification services."""
         services = []
         
-        # Get all services in the notify domain
         try:
             if hasattr(self.hass, 'services') and self.hass.services:
                 all_services = self.hass.services.async_services()
@@ -322,7 +297,6 @@ class FuelPricesOptionsFlow(config_entries.OptionsFlow):
                     notify_services = all_services["notify"]
                     
                     for service_name in sorted(notify_services.keys()):
-                        # Skip the generic notify service
                         if service_name == "notify":
                             continue
                             
@@ -331,15 +305,13 @@ class FuelPricesOptionsFlow(config_entries.OptionsFlow):
                             "label": service_name.replace("_", " ").title()
                         })
         except Exception:
-            pass  # Silently fail and use defaults
+            pass
         
-        # Always add common ones (users can type custom values anyway)
         default_services = [
             {"value": "persistent_notification", "label": "Persistent Notification"},
             {"value": "mobile_app", "label": "Mobile App (Generic)"},
         ]
         
-        # Add defaults that aren't already in the list
         existing_values = {s["value"] for s in services}
         for default in default_services:
             if default["value"] not in existing_values:
