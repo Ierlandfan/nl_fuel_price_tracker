@@ -177,7 +177,7 @@ class FuelPriceAPI:
                         
                         # Match by key (e.g., "e10" for euro95) or name (e.g., "Euro 95 (E10)")
                         if (fuel_type == "euro95" and fuel_key == "e10") or \
-                           (fuel_type == "euro98" and fuel_key in ["e5", "super98"]) or \
+                           (fuel_type == "euro98" and fuel_key == "euro98") or \
                            (fuel_type == "diesel" and fuel_key == "diesel") or \
                            (fuel_type == "lpg" and fuel_key == "lpg") or \
                            (fuel_type == "adblue" and fuel_key == "adblue"):
