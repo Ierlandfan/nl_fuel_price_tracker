@@ -11,6 +11,8 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 import homeassistant.helpers.config_validation as cv
 
+from .towns import get_town_options, get_town_coords
+
 from .const import (
     DOMAIN,
     CONF_LOCATION_LAT,
@@ -43,19 +45,29 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            # Validate coordinates
-            try:
-                lat = float(user_input[CONF_LOCATION_LAT])
-                lon = float(user_input[CONF_LOCATION_LON])
-                
-                if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            # Get coordinates from town selection or manual entry
+            use_town = user_input.get("use_town_selector", True)
+            
+            if use_town and user_input.get("town"):
+                coords = get_town_coords(user_input["town"])
+                if coords:
+                    lat, lon = coords
+                    location_name = user_input["town"]
+                else:
+                    errors["base"] = "invalid_town"
+            else:
+                # Manual coordinates
+                try:
+                    lat = float(user_input[CONF_LOCATION_LAT])
+                    lon = float(user_input[CONF_LOCATION_LON])
+                    location_name = user_input.get("location_name", "Custom")
+                    
+                    if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+                        errors["base"] = "invalid_coordinates"
+                except (ValueError, KeyError):
                     errors["base"] = "invalid_coordinates"
-            except ValueError:
-                errors["base"] = "invalid_coordinates"
 
             if not errors:
-                location_name = user_input.get("location_name", "Home")
-                
                 await self.async_set_unique_id(
                     f"{DOMAIN}_{user_input[CONF_FUEL_TYPE]}_{location_name}"
                 )
@@ -66,19 +78,31 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data={
                         **user_input,
                         "location_name": location_name,
+                        CONF_LOCATION_LAT: lat,
+                        CONF_LOCATION_LON: lon,
                     },
                 )
 
         # Get Home Assistant's home location as default
         home_lat = self.hass.config.latitude
         home_lon = self.hass.config.longitude
+        
+        # Get available notification services
+        notify_services = self._get_notify_services()
 
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({
+                vol.Optional("use_town_selector", default=True): bool,
+                vol.Optional("town"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=get_town_options(),
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
                 vol.Optional("location_name", default="Home"): str,
-                vol.Required(CONF_LOCATION_LAT, default=home_lat): cv.latitude,
-                vol.Required(CONF_LOCATION_LON, default=home_lon): cv.longitude,
+                vol.Optional(CONF_LOCATION_LAT, default=home_lat): cv.latitude,
+                vol.Optional(CONF_LOCATION_LON, default=home_lon): cv.longitude,
                 vol.Required(CONF_RADIUS, default=DEFAULT_RADIUS): vol.All(
                     vol.Coerce(int), vol.Range(min=1, max=50)
                 ),
@@ -105,7 +129,7 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ),
                 vol.Optional(CONF_NOTIFY_SERVICES, default=[]): selector.SelectSelector(
                     selector.SelectSelectorConfig(
-                        options=[],
+                        options=notify_services,
                         multiple=True,
                         custom_value=True,
                         mode=selector.SelectSelectorMode.DROPDOWN,
@@ -113,7 +137,39 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ),
             }),
             errors=errors,
+            description_placeholders={
+                "town_help": "Select a Dutch town/city",
+                "manual_help": "Or enter coordinates manually",
+                "notify_help": "Select notification services (e.g., mobile_app_phone)",
+            },
         )
+    
+    def _get_notify_services(self) -> list[dict[str, str]]:
+        """Get available notification services."""
+        services = []
+        
+        # Get all services in the notify domain
+        if "notify" in self.hass.services.async_services():
+            notify_services = self.hass.services.async_services()["notify"]
+            
+            for service_name in sorted(notify_services.keys()):
+                # Skip the generic notify service
+                if service_name == "notify":
+                    continue
+                    
+                services.append({
+                    "value": service_name,
+                    "label": service_name.replace("_", " ").title()
+                })
+        
+        # Add common ones if list is empty (before HA is fully loaded)
+        if not services:
+            services = [
+                {"value": "mobile_app_phone", "label": "Mobile App Phone"},
+                {"value": "persistent_notification", "label": "Persistent Notification"},
+            ]
+        
+        return services
 
     @staticmethod
     @callback
@@ -142,6 +198,9 @@ class FuelPricesOptionsFlow(config_entries.OptionsFlow):
                 data={**self.config_entry.data, **user_input},
             )
             return self.async_create_entry(title="", data={})
+        
+        # Get available notification services
+        notify_services = self._get_notify_services()
 
         return self.async_show_form(
             step_id="init",
@@ -185,7 +244,7 @@ class FuelPricesOptionsFlow(config_entries.OptionsFlow):
                     default=self.config_entry.data.get(CONF_NOTIFY_SERVICES, []),
                 ): selector.SelectSelector(
                     selector.SelectSelectorConfig(
-                        options=[],
+                        options=notify_services,
                         multiple=True,
                         custom_value=True,
                         mode=selector.SelectSelectorMode.DROPDOWN,
@@ -193,3 +252,30 @@ class FuelPricesOptionsFlow(config_entries.OptionsFlow):
                 ),
             }),
         )
+    
+    def _get_notify_services(self) -> list[dict[str, str]]:
+        """Get available notification services."""
+        services = []
+        
+        # Get all services in the notify domain
+        if "notify" in self.hass.services.async_services():
+            notify_services = self.hass.services.async_services()["notify"]
+            
+            for service_name in sorted(notify_services.keys()):
+                # Skip the generic notify service
+                if service_name == "notify":
+                    continue
+                    
+                services.append({
+                    "value": service_name,
+                    "label": service_name.replace("_", " ").title()
+                })
+        
+        # Add common ones if list is empty
+        if not services:
+            services = [
+                {"value": "mobile_app_phone", "label": "Mobile App Phone"},
+                {"value": "persistent_notification", "label": "Persistent Notification"},
+            ]
+        
+        return services
