@@ -8,6 +8,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers import selector
 import homeassistant.helpers.config_validation as cv
 
 from .const import (
@@ -17,10 +18,16 @@ from .const import (
     CONF_RADIUS,
     CONF_FUEL_TYPE,
     CONF_UPDATE_INTERVAL,
+    CONF_DAILY_NOTIFICATION,
+    CONF_DAILY_NOTIFICATION_TIME,
+    CONF_DAILY_NOTIFICATION_DAYS,
+    CONF_NOTIFY_SERVICES,
     FUEL_TYPES,
     FUEL_EURO95,
     DEFAULT_RADIUS,
     DEFAULT_UPDATE_INTERVAL,
+    DEFAULT_DAILY_TIME,
+    DEFAULT_DAILY_DAYS,
 )
 
 
@@ -79,6 +86,31 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Optional(CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL): vol.All(
                     vol.Coerce(int), vol.Range(min=5, max=60)
                 ),
+                vol.Optional(CONF_DAILY_NOTIFICATION, default=False): bool,
+                vol.Optional(CONF_DAILY_NOTIFICATION_TIME, default=DEFAULT_DAILY_TIME): selector.TimeSelector(),
+                vol.Optional(CONF_DAILY_NOTIFICATION_DAYS, default=DEFAULT_DAILY_DAYS): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            {"value": "mon", "label": "Monday"},
+                            {"value": "tue", "label": "Tuesday"},
+                            {"value": "wed", "label": "Wednesday"},
+                            {"value": "thu", "label": "Thursday"},
+                            {"value": "fri", "label": "Friday"},
+                            {"value": "sat", "label": "Saturday"},
+                            {"value": "sun", "label": "Sunday"},
+                        ],
+                        multiple=True,
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(CONF_NOTIFY_SERVICES, default=[]): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[],
+                        multiple=True,
+                        custom_value=True,
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
             }),
             errors=errors,
         )
@@ -122,5 +154,42 @@ class FuelPricesOptionsFlow(config_entries.OptionsFlow):
                     CONF_UPDATE_INTERVAL,
                     default=self.config_entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL),
                 ): vol.All(vol.Coerce(int), vol.Range(min=5, max=60)),
+                vol.Optional(
+                    CONF_DAILY_NOTIFICATION,
+                    default=self.config_entry.data.get(CONF_DAILY_NOTIFICATION, False),
+                ): bool,
+                vol.Optional(
+                    CONF_DAILY_NOTIFICATION_TIME,
+                    default=self.config_entry.data.get(CONF_DAILY_NOTIFICATION_TIME, DEFAULT_DAILY_TIME),
+                ): selector.TimeSelector(),
+                vol.Optional(
+                    CONF_DAILY_NOTIFICATION_DAYS,
+                    default=self.config_entry.data.get(CONF_DAILY_NOTIFICATION_DAYS, DEFAULT_DAILY_DAYS),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            {"value": "mon", "label": "Monday"},
+                            {"value": "tue", "label": "Tuesday"},
+                            {"value": "wed", "label": "Wednesday"},
+                            {"value": "thu", "label": "Thursday"},
+                            {"value": "fri", "label": "Friday"},
+                            {"value": "sat", "label": "Saturday"},
+                            {"value": "sun", "label": "Sunday"},
+                        ],
+                        multiple=True,
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(
+                    CONF_NOTIFY_SERVICES,
+                    default=self.config_entry.data.get(CONF_NOTIFY_SERVICES, []),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[],
+                        multiple=True,
+                        custom_value=True,
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
             }),
         )

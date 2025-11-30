@@ -11,6 +11,9 @@ CONF_UPDATE_INTERVAL = "update_interval"
 CONF_NOTIFY_ON_CHANGE = "notify_on_change"
 CONF_NOTIFY_SERVICES = "notify_services"
 CONF_PRICE_DROP_THRESHOLD = "price_drop_threshold"
+CONF_DAILY_NOTIFICATION = "daily_notification"
+CONF_DAILY_NOTIFICATION_TIME = "daily_notification_time"
+CONF_DAILY_NOTIFICATION_DAYS = "daily_notification_days"
 
 # Fuel types
 FUEL_EURO95 = "euro95"
@@ -34,11 +37,14 @@ API_UNITED_CONSUMERS = "https://api.unitedconsumers.com/alg/tankstations/zoekoml
 # Events
 EVENT_CHEAPEST_CHANGED = f"{DOMAIN}_cheapest_changed"
 EVENT_PRICE_DROP = f"{DOMAIN}_price_drop"
+EVENT_DAILY_REPORT = f"{DOMAIN}_daily_report"
 
 # Defaults
 DEFAULT_RADIUS = 10  # km
 DEFAULT_UPDATE_INTERVAL = 15  # minutes
 DEFAULT_PRICE_DROP_THRESHOLD = 0.03  # EUR
+DEFAULT_DAILY_TIME = "08:00:00"  # Morning notification
+DEFAULT_DAILY_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]  # Every day
 
 # Attributes
 ATTR_STATION_NAME = "station_name"
@@ -54,3 +60,6 @@ ATTR_PRICE_CHANGE_24H = "price_change_24h"
 ATTR_RANK = "rank"
 ATTR_TOTAL_STATIONS = "total_stations"
 ATTR_STATION_ID = "station_id"
+ATTR_PRICE_WEEK_AGO = "price_week_ago"
+ATTR_PRICE_CHANGE_WEEK = "price_change_week"
+ATTR_ALL_STATIONS = "all_stations"

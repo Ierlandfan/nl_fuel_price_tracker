@@ -12,6 +12,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .const import DOMAIN, CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL
 from .api import FuelPriceAPI
+from .daily_notifications import DailyNotificationManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,6 +23,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Dutch Fuel Prices from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     
+    # Initialize daily notification manager if not already done
+    if "daily_manager" not in hass.data[DOMAIN]:
+        daily_manager = DailyNotificationManager(hass)
+        hass.data[DOMAIN]["daily_manager"] = daily_manager
+    
     session = async_get_clientsession(hass)
     api = FuelPriceAPI(session)
     
@@ -29,6 +35,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await coordinator.async_config_entry_first_refresh()
     
     hass.data[DOMAIN][entry.entry_id] = coordinator
+    
+    # Set up daily notifications for this entry
+    daily_manager = hass.data[DOMAIN]["daily_manager"]
+    await daily_manager.setup(entry)
     
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     
@@ -85,6 +95,11 @@ class FuelPriceCoordinator(DataUpdateCoordinator):
             
             # Find cheapest station
             cheapest = min(stations, key=lambda x: x["price"])
+            
+            # Store price history
+            daily_manager = self.hass.data[DOMAIN].get("daily_manager")
+            if daily_manager:
+                await daily_manager.store_current_price(self.entry.entry_id, cheapest)
             
             return {
                 "stations": stations,

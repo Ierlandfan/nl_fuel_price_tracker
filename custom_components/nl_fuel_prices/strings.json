@@ -10,7 +10,11 @@
           "longitude": "Longitude",
           "radius": "Search Radius (km)",
           "fuel_type": "Fuel Type",
-          "update_interval": "Update Interval (minutes)"
+          "update_interval": "Update Interval (minutes)",
+          "daily_notification": "Enable Daily Notifications",
+          "daily_notification_time": "Daily Notification Time",
+          "daily_notification_days": "Days for Notifications",
+          "notify_services": "Notification Services"
         }
       }
     },
@@ -27,7 +31,11 @@
         "title": "Fuel Price Options",
         "data": {
           "radius": "Search Radius (km)",
-          "update_interval": "Update Interval (minutes)"
+          "update_interval": "Update Interval (minutes)",
+          "daily_notification": "Enable Daily Notifications",
+          "daily_notification_time": "Daily Notification Time",
+          "daily_notification_days": "Days for Notifications",
+          "notify_services": "Notification Services"
         }
       }
     }
