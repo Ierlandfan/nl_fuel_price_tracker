@@ -266,36 +266,14 @@ You can configure API preference in integration options.
 ## Privacy
 
 - Location data stays local in Home Assistant
-- API calls use minimal data (lat/lng + radius)
+- API calls use minimal data (lat/lng + radius) -- default is every hour
 - No tracking or data collection
 - All processing done locally
 
-## Coming Soon
-
-- ⏱️ Historical price charts
-- 📈 Price prediction/trends
-- 🚗 Route optimization (cheapest along route)
-- 💾 Price history export
-- 🔄 Multiple fuel type comparison
-- 📱 Mobile app quick view
-
-## Support
-
-- [Report Issues](https://github.com/yourusername/nl_fuel_price_tracker/issues)
-- [Feature Requests](https://github.com/yourusername/nl_fuel_price_tracker/discussions)
 
 ## License
 
 MIT License - See LICENSE file
 
 ## Credits
-
-- Data provided by Dutch fuel price aggregators
-- Built for Home Assistant community
-- Inspired by need for fuel price transparency in NL
-
----
-
-**Status**: 🚧 Under Development  
-**Expected Release**: December 2024  
-**Target HA Version**: 2024.11+
+Based on: https://github.com/pantherale0/ha-fuelprices
