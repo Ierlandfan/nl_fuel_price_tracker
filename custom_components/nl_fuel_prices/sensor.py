@@ -92,10 +92,13 @@ class FuelPriceSensor(CoordinatorEntity, SensorEntity):
     
     @property
     def name(self) -> str:
-        """Return the name with station name if available."""
+        """Return the name with station name and distance if available."""
         cheapest = self.coordinator.data.get("cheapest")
         if cheapest and self._is_main:
             station_name = cheapest.get("name", "Unknown")
+            distance = cheapest.get("distance")
+            if distance is not None:
+                return f"{station_name} ({distance}km) - {FUEL_TYPES.get(self._fuel_type, self._fuel_type)}"
             return f"{station_name} ({FUEL_TYPES.get(self._fuel_type, self._fuel_type)})"
         return self._attr_name
 
@@ -190,11 +193,14 @@ class FuelStationSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def name(self) -> str:
-        """Return the name with station name."""
+        """Return the name with station name and distance."""
         stations = self.coordinator.data.get("stations", [])
         if self._index < len(stations):
             station = stations[self._index]
             station_name = station.get("name", f"Station {self._index + 1}")
+            distance = station.get("distance")
+            if distance is not None:
+                return f"{station_name} ({distance}km) - {FUEL_TYPES.get(self._fuel_type, self._fuel_type)}"
             return f"{station_name} ({FUEL_TYPES.get(self._fuel_type, self._fuel_type)})"
         return f"Fuel Station {self._index + 1} {self._location_name}"
 
