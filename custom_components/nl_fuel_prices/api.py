@@ -105,7 +105,7 @@ class FuelPriceAPI:
         radius: float,
         fuel_type: str,
     ) -> list[dict[str, Any]]:
-        """Parse DirectLease Tank Service API response."""
+        """Parse DirectLease Tank Service API response and fetch station details."""
         stations = []
         
         if not data or not isinstance(data, list):
@@ -116,11 +116,13 @@ class FuelPriceAPI:
         
         _LOGGER.debug(f"Processing {len(data)} stations from API")
         
+        # First, filter stations by radius
+        nearby_stations = []
         for item in data:
             try:
-                # Get coordinates
-                station_lat = item.get("latitude")
-                station_lon = item.get("longitude")
+                # Get coordinates (API uses 'lat' and 'lng')
+                station_lat = item.get("lat")
+                station_lon = item.get("lng")
                 
                 if station_lat is None or station_lon is None:
                     continue
@@ -128,45 +130,89 @@ class FuelPriceAPI:
                 # Calculate distance
                 distance = self._calculate_distance(latitude, longitude, station_lat, station_lon)
                 
-                if distance > radius:
-                    continue
+                if distance <= radius:
+                    nearby_stations.append({
+                        "id": item.get("id"),
+                        "lat": station_lat,
+                        "lng": station_lon,
+                        "distance": distance,
+                        "brand": item.get("brand", "Unknown"),
+                        "city": item.get("city", ""),
+                    })
+            except (KeyError, ValueError, TypeError):
+                continue
+        
+        _LOGGER.debug(f"Found {len(nearby_stations)} stations within {radius}km radius")
+        
+        # Limit to 20 closest stations to avoid too many API calls
+        nearby_stations.sort(key=lambda x: x["distance"])
+        nearby_stations = nearby_stations[:20]
+        
+        # Fetch details for each nearby station
+        for station_info in nearby_stations:
+            try:
+                station_id = station_info["id"]
+                detail_url = f"{DIRECTLEASE_API_BASE}/places/{station_id}?_v48&lang=en"
+                checksum = _generate_checksum(detail_url)
                 
-                # Find matching fuel price
-                fuels = item.get("fuels", [])
-                matching_price = None
-                
-                for fuel_item in fuels:
-                    fuel_name = fuel_item.get("name", "")
-                    # Extract fuel type from name like "Euro 95 (E10)"
-                    if api_fuel_type.lower() in fuel_name.lower() or f"({api_fuel_type})" in fuel_name:
-                        price_value = fuel_item.get("price")
-                        if price_value and price_value > 0:
-                            # DirectLease returns price in cents per liter (e.g., 1899 = €1.899)
-                            matching_price = price_value / 1000
-                            break
-                
-                if matching_price is None or matching_price == 0:
-                    continue
-                
-                # Build station data
-                station = {
-                    "id": str(item.get("id", f"station_{len(stations)}")),
-                    "name": item.get("name", "Unknown Station"),
-                    "brand": item.get("brand", "Unknown"),
-                    "address": f"{item.get('address', '')}, {item.get('city', '')} {item.get('postalCode', '')}".strip(", "),
-                    "latitude": station_lat,
-                    "longitude": station_lon,
-                    "fuel_type": fuel_type,
-                    "price": round(matching_price, 3),
-                    "opening_hours": self._parse_opening_hours(item.get("openingTimes", [])),
-                    "last_updated": datetime.now().isoformat(),
-                    "distance": round(distance, 2),
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36",
+                    "Accept": "application/json",
+                    "X-Checksum": checksum,
                 }
                 
-                stations.append(station)
-                
-            except (KeyError, ValueError, TypeError) as err:
-                _LOGGER.debug(f"Skipping invalid station: {err}")
+                async with self.session.get(detail_url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status != 200:
+                        continue
+                    
+                    detail_data = await response.json()
+                    
+                    # Find matching fuel price
+                    fuels = detail_data.get("fuels", [])
+                    matching_price = None
+                    
+                    for fuel_item in fuels:
+                        fuel_key = fuel_item.get("key", "").lower()
+                        fuel_name = fuel_item.get("name", "")
+                        
+                        # Match by key (e.g., "e10" for euro95) or name (e.g., "Euro 95 (E10)")
+                        if (fuel_type == "euro95" and fuel_key == "e10") or \
+                           (fuel_type == "euro98" and fuel_key in ["e5", "super98"]) or \
+                           (fuel_type == "diesel" and fuel_key == "diesel") or \
+                           (fuel_type == "lpg" and fuel_key == "lpg") or \
+                           (fuel_type == "adblue" and fuel_key == "adblue"):
+                            price_value = fuel_item.get("price")
+                            if price_value and price_value > 0:
+                                # DirectLease returns price in cents per liter (e.g., 1899 = €1.899)
+                                matching_price = price_value / 1000
+                                break
+                    
+                    if matching_price is None or matching_price == 0:
+                        continue
+                    
+                    # Build station data
+                    station_name = detail_data.get("name", "")
+                    if not station_name:
+                        station_name = f"{detail_data.get('brand', 'Unknown')} {detail_data.get('city', '')}"
+                    
+                    station = {
+                        "id": str(station_id),
+                        "name": station_name.strip(),
+                        "brand": detail_data.get("brand", "Unknown"),
+                        "address": f"{detail_data.get('address', '')}, {detail_data.get('city', '')} {detail_data.get('postalCode', '')}".strip(", "),
+                        "latitude": station_info["lat"],
+                        "longitude": station_info["lng"],
+                        "fuel_type": fuel_type,
+                        "price": round(matching_price, 3),
+                        "opening_hours": self._parse_opening_hours(detail_data.get("openingTimes", [])),
+                        "last_updated": datetime.now().isoformat(),
+                        "distance": round(station_info["distance"], 2),
+                    }
+                    
+                    stations.append(station)
+                    
+            except Exception as err:
+                _LOGGER.debug(f"Failed to fetch station {station_info.get('id')}: {err}")
                 continue
         
         # Sort by price (cheapest first)
