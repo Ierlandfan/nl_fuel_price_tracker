@@ -14,12 +14,18 @@
           "daily_notification": "Enable Daily Notifications",
           "daily_notification_time": "Notification Time",
           "daily_notification_days": "Notification Days",
-          "notify_services": "Notification Devices"
+          "notify_services": "Notification Devices",
+          "notify_on_change": "Notify on Price Changes",
+          "price_drop_threshold": "Price Drop Threshold (€)",
+          "price_increase_threshold": "Price Increase Threshold (€)"
         },
         "data_description": {
           "postcode": "Dutch postcode format: 1234AB (4 digits + 2 letters)",
           "radius": "Search for stations within this radius",
-          "notify_services": "Select devices to receive notifications"
+          "notify_services": "Select devices to receive notifications",
+          "notify_on_change": "Get notified when prices change significantly",
+          "price_drop_threshold": "Minimum price drop (€/L) to trigger notification",
+          "price_increase_threshold": "Minimum price increase (€/L) to trigger notification"
         }
       }
     },
@@ -46,7 +52,10 @@
           "daily_notification": "Enable Daily Notifications",
           "daily_notification_time": "Notification Time",
           "daily_notification_days": "Notification Days",
-          "notify_services": "Notification Devices"
+          "notify_services": "Notification Devices",
+          "notify_on_change": "Notify on Price Changes",
+          "price_drop_threshold": "Price Drop Threshold (€)",
+          "price_increase_threshold": "Price Increase Threshold (€)"
         }
       }
     }

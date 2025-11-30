@@ -26,6 +26,9 @@ from .const import (
     CONF_DAILY_NOTIFICATION_TIME,
     CONF_DAILY_NOTIFICATION_DAYS,
     CONF_NOTIFY_SERVICES,
+    CONF_NOTIFY_ON_CHANGE,
+    CONF_PRICE_DROP_THRESHOLD,
+    CONF_PRICE_INCREASE_THRESHOLD,
     CONF_SCHEDULED_UPDATES,
     CONF_SCHEDULED_UPDATE_TIMES,
     FUEL_TYPES,
@@ -34,6 +37,8 @@ from .const import (
     DEFAULT_UPDATE_INTERVAL,
     DEFAULT_DAILY_TIME,
     DEFAULT_DAILY_DAYS,
+    DEFAULT_PRICE_DROP_THRESHOLD,
+    DEFAULT_PRICE_INCREASE_THRESHOLD,
     DEFAULT_SCHEDULED_UPDATE_TIMES,
 )
 
@@ -140,6 +145,13 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         custom_value=True,
                         mode=selector.SelectSelectorMode.DROPDOWN,
                     )
+                ),
+                vol.Optional(CONF_NOTIFY_ON_CHANGE, default=False): bool,
+                vol.Optional(CONF_PRICE_DROP_THRESHOLD, default=DEFAULT_PRICE_DROP_THRESHOLD): vol.All(
+                    vol.Coerce(float), vol.Range(min=0.01, max=1.0)
+                ),
+                vol.Optional(CONF_PRICE_INCREASE_THRESHOLD, default=DEFAULT_PRICE_INCREASE_THRESHOLD): vol.All(
+                    vol.Coerce(float), vol.Range(min=0.01, max=1.0)
                 ),
             }),
             errors=errors,
@@ -283,6 +295,18 @@ class FuelPricesOptionsFlow(config_entries.OptionsFlow):
                         mode=selector.SelectSelectorMode.DROPDOWN,
                     )
                 ),
+                vol.Optional(
+                    CONF_NOTIFY_ON_CHANGE,
+                    default=self.config_entry.data.get(CONF_NOTIFY_ON_CHANGE, False),
+                ): bool,
+                vol.Optional(
+                    CONF_PRICE_DROP_THRESHOLD,
+                    default=self.config_entry.data.get(CONF_PRICE_DROP_THRESHOLD, DEFAULT_PRICE_DROP_THRESHOLD),
+                ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1.0)),
+                vol.Optional(
+                    CONF_PRICE_INCREASE_THRESHOLD,
+                    default=self.config_entry.data.get(CONF_PRICE_INCREASE_THRESHOLD, DEFAULT_PRICE_INCREASE_THRESHOLD),
+                ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1.0)),
             }),
         )
     

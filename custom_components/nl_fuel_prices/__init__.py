@@ -13,6 +13,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .const import DOMAIN, CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL
 from .api import FuelPriceAPI
 from .daily_notifications import DailyNotificationManager
+from .price_change_notifications import PriceChangeNotificationManager
 from .scheduled_updates import ScheduledUpdates
 
 _LOGGER = logging.getLogger(__name__)
@@ -28,6 +29,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if "daily_manager" not in hass.data[DOMAIN]:
         daily_manager = DailyNotificationManager(hass)
         hass.data[DOMAIN]["daily_manager"] = daily_manager
+    
+    # Initialize price change notification manager if not already done
+    if "price_change_manager" not in hass.data[DOMAIN]:
+        price_change_manager = PriceChangeNotificationManager(hass)
+        hass.data[DOMAIN]["price_change_manager"] = price_change_manager
     
     session = async_get_clientsession(hass)
     api = FuelPriceAPI(session)
@@ -64,6 +70,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         scheduled_updates = hass.data[DOMAIN][f"{entry.entry_id}_scheduled"]
         await scheduled_updates.async_unload()
         hass.data[DOMAIN].pop(f"{entry.entry_id}_scheduled")
+    
+    # Clear price change history
+    if "price_change_manager" in hass.data[DOMAIN]:
+        price_change_manager = hass.data[DOMAIN]["price_change_manager"]
+        price_change_manager.clear_price(entry.entry_id)
     
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hass.data[DOMAIN].pop(entry.entry_id)
@@ -116,6 +127,15 @@ class FuelPriceCoordinator(DataUpdateCoordinator):
             daily_manager = self.hass.data[DOMAIN].get("daily_manager")
             if daily_manager:
                 await daily_manager.store_current_price(self.entry.entry_id, cheapest)
+            
+            # Check for price changes and send notifications
+            price_change_manager = self.hass.data[DOMAIN].get("price_change_manager")
+            if price_change_manager:
+                await price_change_manager.check_and_notify(
+                    self.entry,
+                    cheapest["price"],
+                    cheapest,
+                )
             
             return {
                 "stations": stations,

@@ -11,6 +11,7 @@ CONF_UPDATE_INTERVAL = "update_interval"
 CONF_NOTIFY_ON_CHANGE = "notify_on_change"
 CONF_NOTIFY_SERVICES = "notify_services"
 CONF_PRICE_DROP_THRESHOLD = "price_drop_threshold"
+CONF_PRICE_INCREASE_THRESHOLD = "price_increase_threshold"
 CONF_DAILY_NOTIFICATION = "daily_notification"
 CONF_DAILY_NOTIFICATION_TIME = "daily_notification_time"
 CONF_DAILY_NOTIFICATION_DAYS = "daily_notification_days"
@@ -39,12 +40,14 @@ API_UNITED_CONSUMERS = "https://api.unitedconsumers.com/alg/tankstations/zoekoml
 # Events
 EVENT_CHEAPEST_CHANGED = f"{DOMAIN}_cheapest_changed"
 EVENT_PRICE_DROP = f"{DOMAIN}_price_drop"
+EVENT_PRICE_INCREASE = f"{DOMAIN}_price_increase"
 EVENT_DAILY_REPORT = f"{DOMAIN}_daily_report"
 
 # Defaults
 DEFAULT_RADIUS = 10  # km
 DEFAULT_UPDATE_INTERVAL = 60  # minutes (1 hour)
 DEFAULT_PRICE_DROP_THRESHOLD = 0.03  # EUR
+DEFAULT_PRICE_INCREASE_THRESHOLD = 0.03  # EUR
 DEFAULT_DAILY_TIME = "08:00:00"  # Morning notification
 DEFAULT_DAILY_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]  # Every day
 DEFAULT_SCHEDULED_UPDATE_TIMES = ["06:00:00", "12:00:00", "18:00:00"]  # 6 AM, 12 PM, 6 PM
