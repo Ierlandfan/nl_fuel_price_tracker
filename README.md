@@ -33,9 +33,10 @@ Get **real-time fuel prices** in the Netherlands with automatic **cheapest stati
 - Configurable fuel type per sensor
 
 📍 **Location-Based Search**
-- Search by latitude/longitude (from Home Assistant zones)
+- **Search by Dutch postcode** (e.g., 1621AB, 3811AB, 6711AA)
+- Automatic geocoding (postcode → exact coordinates)
 - Configurable radius (1-50 km)
-- Multiple location monitoring
+- Supports all Dutch postcodes (cities & villages)
 
 💰 **Cheapest Station Alerts**
 - Automatic notifications when cheapest station changes
