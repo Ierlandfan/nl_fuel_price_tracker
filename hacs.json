@@ -1,5 +1,6 @@
 {
-  "domain": "nl_fuel_prices",
   "name": "Dutch Fuel Prices",
-  "version": "0.1.0"
+  "content_in_root": false,
+  "render_readme": true,
+  "homeassistant": "2024.11.0"
 }

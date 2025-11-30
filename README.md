@@ -1,8 +1,24 @@
 # 🇳🇱 Dutch Fuel Prices - Home Assistant Integration
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
+[![GitHub Release](https://img.shields.io/github/release/Ierlandfan/nl_fuel_price_tracker.svg)](https://github.com/Ierlandfan/nl_fuel_price_tracker/releases)
+[![GitHub](https://img.shields.io/github/license/Ierlandfan/nl_fuel_price_tracker.svg)](LICENSE)
 
 Get **real-time fuel prices** in the Netherlands with automatic **cheapest station notifications** based on your location and radius!
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Ierlandfan&repository=nl_fuel_price_tracker&category=integration)
+
+---
+
+## 🚀 Quick Start
+
+1. **Click the badge above** to add to HACS (or add manually via HACS → Custom repositories)
+2. Download the integration and **restart Home Assistant**
+3. **Add Integration**: [![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=nl_fuel_prices)
+4. Configure your location, fuel type, and daily notifications
+5. Get cheapest fuel prices in your area! ⛽💰
+
+---
 
 ## Features
 
@@ -77,12 +93,24 @@ This integration will use **DirectLease API** (or fallback to others) with:
 
 ## Installation
 
-### HACS (Coming Soon)
+### HACS (Recommended)
+
+**Click to add to HACS:**
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Ierlandfan&repository=nl_fuel_price_tracker&category=integration)
+
+**Or manually:**
 
 1. Open HACS in Home Assistant
-2. Add custom repository
-3. Install "Dutch Fuel Prices"
-4. Restart Home Assistant
+2. Click the three dots (⋮) in the top right
+3. Select **"Custom repositories"**
+4. Add repository URL: `https://github.com/Ierlandfan/nl_fuel_price_tracker`
+5. Category: **Integration**
+6. Click **"Add"**
+7. Find "Dutch Fuel Prices" in HACS
+8. Click **"Download"**
+9. Restart Home Assistant
+10. Add integration via UI: [![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=nl_fuel_prices)
 
 ### Manual
 
