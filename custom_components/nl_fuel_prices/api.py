@@ -144,9 +144,9 @@ class FuelPriceAPI:
         
         _LOGGER.debug(f"Found {len(nearby_stations)} stations within {radius}km radius")
         
-        # Limit to 20 closest stations to avoid too many API calls
+        # Limit to 5 closest stations (matching displayed alternatives)
         nearby_stations.sort(key=lambda x: x["distance"])
-        nearby_stations = nearby_stations[:20]
+        nearby_stations = nearby_stations[:5]
         
         # Fetch details for each nearby station
         for station_info in nearby_stations:
