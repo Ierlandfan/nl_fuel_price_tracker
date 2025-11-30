@@ -1,0 +1,56 @@
+"""Constants for the Dutch Fuel Prices integration."""
+
+DOMAIN = "nl_fuel_prices"
+
+# Configuration
+CONF_LOCATION_LAT = "latitude"
+CONF_LOCATION_LON = "longitude"
+CONF_RADIUS = "radius"
+CONF_FUEL_TYPE = "fuel_type"
+CONF_UPDATE_INTERVAL = "update_interval"
+CONF_NOTIFY_ON_CHANGE = "notify_on_change"
+CONF_NOTIFY_SERVICES = "notify_services"
+CONF_PRICE_DROP_THRESHOLD = "price_drop_threshold"
+
+# Fuel types
+FUEL_EURO95 = "euro95"
+FUEL_EURO98 = "euro98"
+FUEL_DIESEL = "diesel"
+FUEL_LPG = "lpg"
+FUEL_ADBLUE = "adblue"
+
+FUEL_TYPES = {
+    FUEL_EURO95: "Euro 95 (E10)",
+    FUEL_EURO98: "Euro 98",
+    FUEL_DIESEL: "Diesel",
+    FUEL_LPG: "LPG",
+    FUEL_ADBLUE: "AdBlue",
+}
+
+# API endpoints
+API_DIRECTLEASE = "https://tankservice.app-it-up.com/Tankservice/v1/places"
+API_UNITED_CONSUMERS = "https://api.unitedconsumers.com/alg/tankstations/zoekomlat"
+
+# Events
+EVENT_CHEAPEST_CHANGED = f"{DOMAIN}_cheapest_changed"
+EVENT_PRICE_DROP = f"{DOMAIN}_price_drop"
+
+# Defaults
+DEFAULT_RADIUS = 10  # km
+DEFAULT_UPDATE_INTERVAL = 15  # minutes
+DEFAULT_PRICE_DROP_THRESHOLD = 0.03  # EUR
+
+# Attributes
+ATTR_STATION_NAME = "station_name"
+ATTR_STATION_BRAND = "station_brand"
+ATTR_STATION_ADDRESS = "station_address"
+ATTR_DISTANCE = "distance"
+ATTR_LATITUDE = "latitude"
+ATTR_LONGITUDE = "longitude"
+ATTR_OPENING_HOURS = "opening_hours"
+ATTR_LAST_UPDATED = "last_updated"
+ATTR_PRICE_YESTERDAY = "price_yesterday"
+ATTR_PRICE_CHANGE_24H = "price_change_24h"
+ATTR_RANK = "rank"
+ATTR_TOTAL_STATIONS = "total_stations"
+ATTR_STATION_ID = "station_id"

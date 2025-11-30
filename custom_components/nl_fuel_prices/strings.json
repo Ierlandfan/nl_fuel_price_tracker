@@ -1,0 +1,35 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Dutch Fuel Prices Setup",
+        "description": "Configure fuel price monitoring for your location",
+        "data": {
+          "location_name": "Location Name",
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "radius": "Search Radius (km)",
+          "fuel_type": "Fuel Type",
+          "update_interval": "Update Interval (minutes)"
+        }
+      }
+    },
+    "error": {
+      "invalid_coordinates": "Invalid coordinates provided"
+    },
+    "abort": {
+      "already_configured": "This fuel type for this location is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Fuel Price Options",
+        "data": {
+          "radius": "Search Radius (km)",
+          "update_interval": "Update Interval (minutes)"
+        }
+      }
+    }
+  }
+}
