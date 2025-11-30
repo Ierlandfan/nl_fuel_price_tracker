@@ -43,7 +43,7 @@ EVENT_DAILY_REPORT = f"{DOMAIN}_daily_report"
 
 # Defaults
 DEFAULT_RADIUS = 10  # km
-DEFAULT_UPDATE_INTERVAL = 15  # minutes
+DEFAULT_UPDATE_INTERVAL = 60  # minutes (1 hour)
 DEFAULT_PRICE_DROP_THRESHOLD = 0.03  # EUR
 DEFAULT_DAILY_TIME = "08:00:00"  # Morning notification
 DEFAULT_DAILY_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]  # Every day

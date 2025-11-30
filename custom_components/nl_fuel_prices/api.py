@@ -72,7 +72,7 @@ class FuelPriceAPI:
         checksum = _generate_checksum(url)
         
         headers = {
-            "User-Agent": "HomeAssistant/NLFuelPrices/1.0",
+            "User-Agent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36",
             "Accept": "application/json",
             "X-Checksum": checksum,
         }
