@@ -153,27 +153,37 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         services = []
         
         # Get all services in the notify domain
-        if "notify" in self.hass.services.async_services():
-            notify_services = self.hass.services.async_services()["notify"]
-            
-            for service_name in sorted(notify_services.keys()):
-                # Skip the generic notify service
-                if service_name == "notify":
-                    continue
+        try:
+            if hasattr(self.hass, 'services') and self.hass.services:
+                all_services = self.hass.services.async_services()
+                if "notify" in all_services:
+                    notify_services = all_services["notify"]
                     
-                services.append({
-                    "value": service_name,
-                    "label": service_name.replace("_", " ").title()
-                })
+                    for service_name in sorted(notify_services.keys()):
+                        # Skip the generic notify service
+                        if service_name == "notify":
+                            continue
+                            
+                        services.append({
+                            "value": service_name,
+                            "label": service_name.replace("_", " ").title()
+                        })
+        except Exception:
+            pass  # Silently fail and use defaults
         
-        # Add common ones if list is empty (before HA is fully loaded)
-        if not services:
-            services = [
-                {"value": "mobile_app_phone", "label": "Mobile App Phone"},
-                {"value": "persistent_notification", "label": "Persistent Notification"},
-            ]
+        # Always add common ones (users can type custom values anyway)
+        default_services = [
+            {"value": "persistent_notification", "label": "Persistent Notification"},
+            {"value": "mobile_app", "label": "Mobile App (Generic)"},
+        ]
         
-        return services
+        # Add defaults that aren't already in the list
+        existing_values = {s["value"] for s in services}
+        for default in default_services:
+            if default["value"] not in existing_values:
+                services.insert(0, default)
+        
+        return services if services else default_services
 
     @staticmethod
     @callback
@@ -262,24 +272,34 @@ class FuelPricesOptionsFlow(config_entries.OptionsFlow):
         services = []
         
         # Get all services in the notify domain
-        if "notify" in self.hass.services.async_services():
-            notify_services = self.hass.services.async_services()["notify"]
-            
-            for service_name in sorted(notify_services.keys()):
-                # Skip the generic notify service
-                if service_name == "notify":
-                    continue
+        try:
+            if hasattr(self.hass, 'services') and self.hass.services:
+                all_services = self.hass.services.async_services()
+                if "notify" in all_services:
+                    notify_services = all_services["notify"]
                     
-                services.append({
-                    "value": service_name,
-                    "label": service_name.replace("_", " ").title()
-                })
+                    for service_name in sorted(notify_services.keys()):
+                        # Skip the generic notify service
+                        if service_name == "notify":
+                            continue
+                            
+                        services.append({
+                            "value": service_name,
+                            "label": service_name.replace("_", " ").title()
+                        })
+        except Exception:
+            pass  # Silently fail and use defaults
         
-        # Add common ones if list is empty
-        if not services:
-            services = [
-                {"value": "mobile_app_phone", "label": "Mobile App Phone"},
-                {"value": "persistent_notification", "label": "Persistent Notification"},
-            ]
+        # Always add common ones (users can type custom values anyway)
+        default_services = [
+            {"value": "persistent_notification", "label": "Persistent Notification"},
+            {"value": "mobile_app", "label": "Mobile App (Generic)"},
+        ]
         
-        return services
+        # Add defaults that aren't already in the list
+        existing_values = {s["value"] for s in services}
+        for default in default_services:
+            if default["value"] not in existing_values:
+                services.insert(0, default)
+        
+        return services if services else default_services
