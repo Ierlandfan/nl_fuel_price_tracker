@@ -13,6 +13,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .const import DOMAIN, CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL
 from .api import FuelPriceAPI
 from .daily_notifications import DailyNotificationManager
+from .scheduled_updates import ScheduledUpdates
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,6 +41,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     daily_manager = hass.data[DOMAIN]["daily_manager"]
     await daily_manager.setup(entry)
     
+    # Set up scheduled updates
+    scheduled_updates = ScheduledUpdates(
+        hass,
+        entry,
+        coordinator.async_request_refresh
+    )
+    await scheduled_updates.async_setup()
+    hass.data[DOMAIN][f"{entry.entry_id}_scheduled"] = scheduled_updates
+    
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
@@ -49,6 +59,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
+    # Unload scheduled updates
+    if f"{entry.entry_id}_scheduled" in hass.data[DOMAIN]:
+        scheduled_updates = hass.data[DOMAIN][f"{entry.entry_id}_scheduled"]
+        await scheduled_updates.async_unload()
+        hass.data[DOMAIN].pop(f"{entry.entry_id}_scheduled")
+    
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hass.data[DOMAIN].pop(entry.entry_id)
     

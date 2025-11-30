@@ -24,12 +24,15 @@ from .const import (
     CONF_DAILY_NOTIFICATION_TIME,
     CONF_DAILY_NOTIFICATION_DAYS,
     CONF_NOTIFY_SERVICES,
+    CONF_SCHEDULED_UPDATES,
+    CONF_SCHEDULED_UPDATE_TIMES,
     FUEL_TYPES,
     FUEL_EURO95,
     DEFAULT_RADIUS,
     DEFAULT_UPDATE_INTERVAL,
     DEFAULT_DAILY_TIME,
     DEFAULT_DAILY_DAYS,
+    DEFAULT_SCHEDULED_UPDATE_TIMES,
 )
 
 
@@ -113,6 +116,23 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_FUEL_TYPE, default=FUEL_EURO95): vol.In(FUEL_TYPES),
                 vol.Optional(CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL): vol.All(
                     vol.Coerce(int), vol.Range(min=5, max=60)
+                ),
+                vol.Optional(CONF_SCHEDULED_UPDATES, default=False): bool,
+                vol.Optional(CONF_SCHEDULED_UPDATE_TIMES, default=DEFAULT_SCHEDULED_UPDATE_TIMES): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            {"value": "00:00:00", "label": "00:00 (Midnight)"},
+                            {"value": "03:00:00", "label": "03:00 (3 AM)"},
+                            {"value": "06:00:00", "label": "06:00 (6 AM)"},
+                            {"value": "09:00:00", "label": "09:00 (9 AM)"},
+                            {"value": "12:00:00", "label": "12:00 (Noon)"},
+                            {"value": "15:00:00", "label": "15:00 (3 PM)"},
+                            {"value": "18:00:00", "label": "18:00 (6 PM)"},
+                            {"value": "21:00:00", "label": "21:00 (9 PM)"},
+                        ],
+                        multiple=True,
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
                 ),
                 vol.Optional(CONF_DAILY_NOTIFICATION, default=False): bool,
                 vol.Optional(CONF_DAILY_NOTIFICATION_TIME, default=DEFAULT_DAILY_TIME): selector.TimeSelector(),
@@ -227,6 +247,29 @@ class FuelPricesOptionsFlow(config_entries.OptionsFlow):
                     CONF_UPDATE_INTERVAL,
                     default=self.config_entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL),
                 ): vol.All(vol.Coerce(int), vol.Range(min=5, max=60)),
+                vol.Optional(
+                    CONF_SCHEDULED_UPDATES,
+                    default=self.config_entry.data.get(CONF_SCHEDULED_UPDATES, False),
+                ): bool,
+                vol.Optional(
+                    CONF_SCHEDULED_UPDATE_TIMES,
+                    default=self.config_entry.data.get(CONF_SCHEDULED_UPDATE_TIMES, DEFAULT_SCHEDULED_UPDATE_TIMES),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            {"value": "00:00:00", "label": "00:00 (Midnight)"},
+                            {"value": "03:00:00", "label": "03:00 (3 AM)"},
+                            {"value": "06:00:00", "label": "06:00 (6 AM)"},
+                            {"value": "09:00:00", "label": "09:00 (9 AM)"},
+                            {"value": "12:00:00", "label": "12:00 (Noon)"},
+                            {"value": "15:00:00", "label": "15:00 (3 PM)"},
+                            {"value": "18:00:00", "label": "18:00 (6 PM)"},
+                            {"value": "21:00:00", "label": "21:00 (9 PM)"},
+                        ],
+                        multiple=True,
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
                 vol.Optional(
                     CONF_DAILY_NOTIFICATION,
                     default=self.config_entry.data.get(CONF_DAILY_NOTIFICATION, False),

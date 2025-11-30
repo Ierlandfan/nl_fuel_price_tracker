@@ -13,6 +13,8 @@
           "radius": "Search Radius (km)",
           "fuel_type": "Fuel Type",
           "update_interval": "Update Interval (minutes)",
+          "scheduled_updates": "Enable Scheduled Updates",
+          "scheduled_update_times": "Update Times",
           "daily_notification": "Enable Daily Notifications",
           "daily_notification_time": "Daily Notification Time",
           "daily_notification_days": "Days for Notifications",
@@ -21,6 +23,9 @@
         "data_description": {
           "use_town_selector": "Enable to select from Dutch towns, disable for manual coordinates",
           "town": "Select by postcode or town name (e.g., 1621 or Hoorn)",
+          "update_interval": "Continuous updates every X minutes (uses API quota)",
+          "scheduled_updates": "Update only at specific times (more efficient)",
+          "scheduled_update_times": "Select times to check prices (e.g., 06:00, 12:00, 18:00)",
           "notify_services": "Type your notification service name (e.g., mobile_app_your_phone_name) or select from list. Find yours in Developer Tools → Services → notify."
         }
       }

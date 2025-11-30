@@ -14,6 +14,8 @@ CONF_PRICE_DROP_THRESHOLD = "price_drop_threshold"
 CONF_DAILY_NOTIFICATION = "daily_notification"
 CONF_DAILY_NOTIFICATION_TIME = "daily_notification_time"
 CONF_DAILY_NOTIFICATION_DAYS = "daily_notification_days"
+CONF_SCHEDULED_UPDATES = "scheduled_updates"
+CONF_SCHEDULED_UPDATE_TIMES = "scheduled_update_times"
 
 # Fuel types
 FUEL_EURO95 = "euro95"
@@ -45,6 +47,7 @@ DEFAULT_UPDATE_INTERVAL = 15  # minutes
 DEFAULT_PRICE_DROP_THRESHOLD = 0.03  # EUR
 DEFAULT_DAILY_TIME = "08:00:00"  # Morning notification
 DEFAULT_DAILY_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]  # Every day
+DEFAULT_SCHEDULED_UPDATE_TIMES = ["06:00:00", "12:00:00", "18:00:00"]  # 6 AM, 12 PM, 6 PM
 
 # Attributes
 ATTR_STATION_NAME = "station_name"
