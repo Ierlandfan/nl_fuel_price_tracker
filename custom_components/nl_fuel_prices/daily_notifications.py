@@ -102,7 +102,13 @@ class DailyNotificationManager:
             # Send notification
             notify_services = config_entry.data.get(CONF_NOTIFY_SERVICES, [])
             if notify_services:
-                await self._send_notifications(notify_services, "⛽ Daily Fuel Report", message)
+                await self._send_notifications(
+                    notify_services, 
+                    "⛽ Daily Fuel Report", 
+                    message,
+                    cheapest,
+                    all_stations[:3] if len(all_stations) > 0 else []
+                )
             
             # Fire event
             await self._fire_daily_report_event(cheapest, price_week_ago, data, config_entry)
@@ -206,29 +212,110 @@ class DailyNotificationManager:
         services: list[str],
         title: str,
         message: str,
+        cheapest_station: dict[str, Any] | None = None,
+        top_stations: list[dict[str, Any]] | None = None,
     ) -> None:
-        """Send notification to all configured services."""
+        """Send notification to all configured services with Telegram enhancements."""
         for service in services:
             try:
                 # Support both 'notify.mobile_app_phone' and 'mobile_app_phone' formats
                 if not service.startswith("notify."):
                     service = f"notify.{service}"
                 
+                notification_data = {
+                    "title": title,
+                    "message": message,
+                    "data": {
+                        "priority": "normal",
+                        "notification_icon": "mdi:gas-station",
+                    },
+                }
+                
+                # Enhanced Telegram features
+                if "telegram" in service.lower():
+                    notification_data["data"]["parse_mode"] = "HTML"
+                    
+                    # Format message with HTML
+                    if cheapest_station:
+                        notification_data["message"] = self._format_html_daily_message(
+                            message, cheapest_station, top_stations
+                        )
+                    
+                    # Add location for cheapest station
+                    if cheapest_station:
+                        lat = cheapest_station.get("latitude")
+                        lon = cheapest_station.get("longitude")
+                        if lat and lon:
+                            # Send location as separate message
+                            await self.hass.services.async_call(
+                                "notify",
+                                service.replace("notify.", ""),
+                                {
+                                    "message": "📍 Cheapest Station Location",
+                                    "data": {
+                                        "location": {
+                                            "latitude": lat,
+                                            "longitude": lon,
+                                        }
+                                    }
+                                },
+                            )
+                            
+                            # Add inline keyboard with navigation
+                            notification_data["data"]["inline_keyboard"] = [
+                                [
+                                    {
+                                        "text": "🗺️ Open in Google Maps",
+                                        "url": f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"
+                                    }
+                                ],
+                                [
+                                    {
+                                        "text": "🧭 Navigate",
+                                        "url": f"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}"
+                                    }
+                                ]
+                            ]
+                
                 await self.hass.services.async_call(
                     "notify",
                     service.replace("notify.", ""),
-                    {
-                        "title": title,
-                        "message": message,
-                        "data": {
-                            "priority": "normal",
-                            "notification_icon": "mdi:gas-station",
-                        },
-                    },
+                    notification_data,
                 )
                 _LOGGER.info(f"Sent daily report via {service}")
             except Exception as err:
                 _LOGGER.error(f"Failed to send notification via {service}: {err}")
+    
+    def _format_html_daily_message(
+        self,
+        message: str,
+        cheapest_station: dict[str, Any],
+        top_stations: list[dict[str, Any]] | None,
+    ) -> str:
+        """Format daily message with HTML for Telegram."""
+        lines = message.split('\n')
+        html_msg = ""
+        
+        for line in lines:
+            if line.startswith("🏆"):
+                html_msg += f"<b>{line}</b>\n"
+            elif line.startswith("💰 Top 3"):
+                html_msg += f"\n<b>{line}</b>\n"
+            elif "€" in line and any(str(i) + "." in line for i in range(1, 4)):
+                # Top 3 stations - make price bold
+                parts = line.split(" - €")
+                if len(parts) == 2:
+                    html_msg += f"{parts[0]} - <b>€{parts[1]}</b>\n"
+                else:
+                    html_msg += f"{line}\n"
+            elif line.startswith("📍") or line.startswith("📮"):
+                html_msg += f"<i>{line}</i>\n"
+            elif "Cheapest Station:" in line or "Price Range:" in line:
+                html_msg += f"<b>{line}</b>\n"
+            else:
+                html_msg += f"{line}\n"
+        
+        return html_msg
 
     async def _fire_daily_report_event(
         self,
