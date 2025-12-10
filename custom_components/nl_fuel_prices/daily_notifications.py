@@ -295,7 +295,7 @@ class DailyNotificationManager:
                 inline_keyboard = [
                     [["🗺️ Open in Google Maps", f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"]],
                     [["🧭 Navigate (Google)", f"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}"]],
-                    [["🚗 Navigate (Waze)", f"waze://?ll={lat},{lon}&navigate=yes"]]
+                    [["🚗 Navigate (Waze)", f"https://waze.com/ul?ll={lat},{lon}&navigate=yes"]]
                 ]
         
         # Send main message
@@ -393,7 +393,7 @@ class DailyNotificationManager:
                     [
                         {
                             "text": "🚗 Navigate (Waze)",
-                            "url": f"waze://?ll={lat},{lon}&navigate=yes"
+                            "url": f"https://waze.com/ul?ll={lat},{lon}&navigate=yes"
                         }
                     ]
                 ]
