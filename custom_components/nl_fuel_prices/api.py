@@ -166,6 +166,15 @@ class FuelPriceAPI:
                     
                     detail_data = await response.json()
                     
+                    # Debug: log available fields
+                    _LOGGER.debug(f"Station {station_id} fields: {list(detail_data.keys())}")
+                    if "facilities" in detail_data:
+                        _LOGGER.debug(f"Facilities: {detail_data['facilities']}")
+                    if "unmanned" in detail_data:
+                        _LOGGER.debug(f"Unmanned: {detail_data['unmanned']}")
+                    if "shop" in detail_data:
+                        _LOGGER.debug(f"Shop: {detail_data['shop']}")
+                    
                     # Find matching fuel price
                     fuels = detail_data.get("fuels", [])
                     matching_price = None
