@@ -294,7 +294,8 @@ class DailyNotificationManager:
             if lat and lon:
                 inline_keyboard = [
                     [["🗺️ Open in Google Maps", f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"]],
-                    [["🧭 Navigate", f"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}"]]
+                    [["🧭 Navigate (Google)", f"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}"]],
+                    [["🚗 Navigate (Waze)", f"waze://?ll={lat},{lon}&navigate=yes"]]
                 ]
         
         # Send main message
@@ -364,7 +365,7 @@ class DailyNotificationManager:
                     "notify",
                     service.replace("notify.", ""),
                     {
-                        "message": "📍 Cheapest Station Location",
+                        "message": "⛽ Fuel Price Update",
                         "data": {
                             "location": {
                                 "latitude": lat,
@@ -385,8 +386,14 @@ class DailyNotificationManager:
                     ],
                     [
                         {
-                            "text": "🧭 Navigate",
+                            "text": "🧭 Navigate (Google)",
                             "url": f"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}"
+                        }
+                    ],
+                    [
+                        {
+                            "text": "🚗 Navigate (Waze)",
+                            "url": f"waze://?ll={lat},{lon}&navigate=yes"
                         }
                     ]
                 ]
