@@ -101,13 +101,14 @@ class DailyNotificationManager:
             
             # Send notification
             notify_services = config_entry.data.get(CONF_NOTIFY_SERVICES, [])
+            stations = data.get("stations", [])
             if notify_services:
                 await self._send_notifications(
                     notify_services, 
                     "⛽ Daily Fuel Report", 
                     message,
                     cheapest,
-                    all_stations[:3] if len(all_stations) > 0 else []
+                    stations[:3] if len(stations) > 0 else []
                 )
             
             # Fire event

@@ -42,8 +42,12 @@ async def async_setup_entry(
         FuelPriceSensor(coordinator, fuel_type, location_name, is_main=True)
     ]
     
-    # Add sensors for alternative stations (stations 1-4, as station 0 is the main/cheapest)
-    for i in range(1, 5):
+    # Dynamically add sensors based on actual stations found (up to max 5 total)
+    stations = coordinator.data.get("stations", [])
+    num_stations = min(len(stations), 5)  # Max 5 stations total
+    
+    # Add sensors for alternative stations (stations 1 onwards, as station 0 is the main/cheapest)
+    for i in range(1, num_stations):
         sensors.append(
             FuelStationSensor(coordinator, fuel_type, location_name, i)
         )
