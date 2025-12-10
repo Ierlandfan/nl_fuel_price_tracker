@@ -164,9 +164,17 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     
     def _get_notify_services(self) -> list[dict[str, str]]:
         """Get available notification services."""
+        default_services = [
+            {"value": "persistent_notification", "label": "Persistent Notification"},
+            {"value": "mobile_app", "label": "Mobile App (Generic)"},
+        ]
+        
         services = []
         
         try:
+            if not hasattr(self, 'hass') or not self.hass:
+                return default_services
+                
             if hasattr(self.hass, 'services') and self.hass.services:
                 all_services = self.hass.services.async_services()
                 if "notify" in all_services:
@@ -181,12 +189,7 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             "label": service_name.replace("_", " ").title()
                         })
         except Exception:
-            pass
-        
-        default_services = [
-            {"value": "persistent_notification", "label": "Persistent Notification"},
-            {"value": "mobile_app", "label": "Mobile App (Generic)"},
-        ]
+            return default_services
         
         existing_values = {s["value"] for s in services}
         for default in default_services:
@@ -222,7 +225,13 @@ class FuelPricesOptionsFlow(config_entries.OptionsFlow):
             )
             return self.async_create_entry(title="", data={})
         
-        notify_services = self._get_notify_services()
+        try:
+            notify_services = self._get_notify_services()
+        except Exception:
+            notify_services = [
+                {"value": "persistent_notification", "label": "Persistent Notification"},
+                {"value": "mobile_app", "label": "Mobile App (Generic)"},
+            ]
 
         return self.async_show_form(
             step_id="init",
@@ -312,9 +321,17 @@ class FuelPricesOptionsFlow(config_entries.OptionsFlow):
     
     def _get_notify_services(self) -> list[dict[str, str]]:
         """Get available notification services."""
+        default_services = [
+            {"value": "persistent_notification", "label": "Persistent Notification"},
+            {"value": "mobile_app", "label": "Mobile App (Generic)"},
+        ]
+        
         services = []
         
         try:
+            if not hasattr(self, 'hass') or not self.hass:
+                return default_services
+                
             if hasattr(self.hass, 'services') and self.hass.services:
                 all_services = self.hass.services.async_services()
                 if "notify" in all_services:
@@ -329,12 +346,7 @@ class FuelPricesOptionsFlow(config_entries.OptionsFlow):
                             "label": service_name.replace("_", " ").title()
                         })
         except Exception:
-            pass
-        
-        default_services = [
-            {"value": "persistent_notification", "label": "Persistent Notification"},
-            {"value": "mobile_app", "label": "Mobile App (Generic)"},
-        ]
+            return default_services
         
         existing_values = {s["value"] for s in services}
         for default in default_services:
