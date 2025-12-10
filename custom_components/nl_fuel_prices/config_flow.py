@@ -126,7 +126,7 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     city = geo_result.get("city", "Unknown")
                     province = geo_result.get("province", "")
                     
-                    location_name = f"{postcode} ({city})"
+                    location_name = city
                     
                     await self.async_set_unique_id(
                         f"{DOMAIN}_{user_input[CONF_FUEL_TYPE]}_{postcode}"
