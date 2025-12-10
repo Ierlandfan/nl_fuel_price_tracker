@@ -150,7 +150,32 @@ class DailyNotificationManager:
         message += f"🏆 Cheapest Station:\n"
         message += f"{cheapest.get('name')} - €{cheapest.get('price'):.3f}/L\n"
         message += f"📍 {cheapest.get('distance')}km away\n"
-        message += f"📮 {cheapest.get('address', 'N/A')}\n\n"
+        message += f"📮 {cheapest.get('address', 'N/A')}\n"
+        
+        # Station type and services
+        is_unmanned = cheapest.get('is_unmanned', False)
+        has_shop = cheapest.get('has_shop', False)
+        
+        if is_unmanned:
+            message += f"🤖 Unmanned station\n"
+        else:
+            message += f"👤 Manned station\n"
+        
+        if has_shop:
+            message += f"🏪 Shop available\n"
+            shop_hours = cheapest.get('shop_hours')
+            if shop_hours:
+                # Show today's shop hours
+                from datetime import datetime
+                day_names = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+                today = day_names[datetime.now().weekday()]
+                if today in shop_hours:
+                    hours = shop_hours[today]
+                    start = self._format_time(hours[0])
+                    end = self._format_time(hours[1])
+                    message += f"🕐 Shop hours today: {start} - {end}\n"
+        
+        message += "\n"
         
         # Week comparison
         if price_week_ago is not None:
@@ -471,6 +496,17 @@ class DailyNotificationManager:
             ]
         
         self.hass.bus.async_fire(EVENT_DAILY_REPORT, event_data)
+    
+    def _format_time(self, time_int: int) -> str:
+        """Format time from API format (e.g., 600 -> '06:00', 1630 -> '16:30')."""
+        if time_int == 0:
+            return "00:00"
+        if time_int == 2400:
+            return "24:00"
+        
+        hours = time_int // 100
+        minutes = time_int % 100
+        return f"{hours:02d}:{minutes:02d}"
 
     async def store_current_price(self, entry_id: str, station: dict[str, Any]) -> None:
         """Store current price for historical tracking."""
