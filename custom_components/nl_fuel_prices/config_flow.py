@@ -7,7 +7,7 @@ import voluptuous as vol
 import aiohttp
 
 from homeassistant import config_entries
-from homeassistant.core import callback
+from homeassistant.core import callback, HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 import homeassistant.helpers.config_validation as cv
@@ -41,6 +41,61 @@ from .const import (
     DEFAULT_PRICE_INCREASE_THRESHOLD,
     DEFAULT_SCHEDULED_UPDATE_TIMES,
 )
+
+
+def get_notify_services(hass: HomeAssistant | None) -> list[dict[str, str]]:
+    """Get available notification services - shared function."""
+    default_services = [
+        {"value": "persistent_notification", "label": "Persistent Notification"},
+        {"value": "mobile_app", "label": "Mobile App (Generic)"},
+    ]
+    
+    if not hass:
+        return default_services
+    
+    services = []
+    
+    try:
+        if hasattr(hass, 'services') and hass.services:
+            all_services = hass.services.async_services()
+            
+            # Check for telegram_bot service
+            if "telegram_bot" in all_services:
+                telegram_services = all_services["telegram_bot"]
+                if "send_message" in telegram_services:
+                    services.append({
+                        "value": "telegram_bot",
+                        "label": "📱 Telegram Bot (Direct)"
+                    })
+            
+            # Check for notify services
+            if "notify" in all_services:
+                notify_services = all_services["notify"]
+                
+                for service_name in sorted(notify_services.keys()):
+                    if service_name == "notify":
+                        continue
+                    
+                    # Add icon for telegram notify service
+                    if "telegram" in service_name.lower():
+                        label = f"📱 {service_name.replace('_', ' ').title()}"
+                    else:
+                        label = service_name.replace("_", " ").title()
+                        
+                    services.append({
+                        "value": service_name,
+                        "label": label
+                    })
+    except Exception:
+        return default_services
+    
+    existing_values = {s["value"] for s in services}
+    for default in default_services:
+        if default["value"] not in existing_values:
+            services.insert(0, default)
+    
+    return services if services else default_services
+
 
 
 class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -91,7 +146,7 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         },
                     )
 
-        notify_services = self._get_notify_services()
+        notify_services = get_notify_services(self.hass)
 
         return self.async_show_form(
             step_id="user",
@@ -162,49 +217,13 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             },
         )
     
-    def _get_notify_services(self) -> list[dict[str, str]]:
-        """Get available notification services."""
-        default_services = [
-            {"value": "persistent_notification", "label": "Persistent Notification"},
-            {"value": "mobile_app", "label": "Mobile App (Generic)"},
-        ]
-        
-        services = []
-        
-        try:
-            if not hasattr(self, 'hass') or not self.hass:
-                return default_services
-                
-            if hasattr(self.hass, 'services') and self.hass.services:
-                all_services = self.hass.services.async_services()
-                if "notify" in all_services:
-                    notify_services = all_services["notify"]
-                    
-                    for service_name in sorted(notify_services.keys()):
-                        if service_name == "notify":
-                            continue
-                            
-                        services.append({
-                            "value": service_name,
-                            "label": service_name.replace("_", " ").title()
-                        })
-        except Exception:
-            return default_services
-        
-        existing_values = {s["value"] for s in services}
-        for default in default_services:
-            if default["value"] not in existing_values:
-                services.insert(0, default)
-        
-        return services if services else default_services
-
     @staticmethod
     @callback
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
     ) -> FuelPricesOptionsFlow:
         """Get the options flow for this handler."""
-        return FuelPricesOptionsFlow(config_entry)
+        return FuelPricesOptionsFlow()
 
 
 class FuelPricesOptionsFlow(config_entries.OptionsFlow):
@@ -221,13 +240,7 @@ class FuelPricesOptionsFlow(config_entries.OptionsFlow):
             )
             return self.async_create_entry(title="", data={})
         
-        try:
-            notify_services = self._get_notify_services()
-        except Exception:
-            notify_services = [
-                {"value": "persistent_notification", "label": "Persistent Notification"},
-                {"value": "mobile_app", "label": "Mobile App (Generic)"},
-            ]
+        notify_services = get_notify_services(self.hass)
 
         return self.async_show_form(
             step_id="init",
@@ -314,39 +327,3 @@ class FuelPricesOptionsFlow(config_entries.OptionsFlow):
                 ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1.0)),
             }),
         )
-    
-    def _get_notify_services(self) -> list[dict[str, str]]:
-        """Get available notification services."""
-        default_services = [
-            {"value": "persistent_notification", "label": "Persistent Notification"},
-            {"value": "mobile_app", "label": "Mobile App (Generic)"},
-        ]
-        
-        services = []
-        
-        try:
-            if not hasattr(self, 'hass') or not self.hass:
-                return default_services
-                
-            if hasattr(self.hass, 'services') and self.hass.services:
-                all_services = self.hass.services.async_services()
-                if "notify" in all_services:
-                    notify_services = all_services["notify"]
-                    
-                    for service_name in sorted(notify_services.keys()):
-                        if service_name == "notify":
-                            continue
-                            
-                        services.append({
-                            "value": service_name,
-                            "label": service_name.replace("_", " ").title()
-                        })
-        except Exception:
-            return default_services
-        
-        existing_values = {s["value"] for s in services}
-        for default in default_services:
-            if default["value"] not in existing_values:
-                services.insert(0, default)
-        
-        return services if services else default_services
