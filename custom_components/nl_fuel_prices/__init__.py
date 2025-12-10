@@ -71,6 +71,14 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await scheduled_updates.async_unload()
         hass.data[DOMAIN].pop(f"{entry.entry_id}_scheduled")
     
+    # Cancel daily notification tracker for this entry
+    if "daily_manager" in hass.data[DOMAIN]:
+        daily_manager = hass.data[DOMAIN]["daily_manager"]
+        if entry.entry_id in daily_manager._cancel_trackers:
+            daily_manager._cancel_trackers[entry.entry_id]()
+            del daily_manager._cancel_trackers[entry.entry_id]
+            _LOGGER.info(f"Cancelled daily notification tracker for entry {entry.entry_id}")
+    
     # Clear price change history
     if "price_change_manager" in hass.data[DOMAIN]:
         price_change_manager = hass.data[DOMAIN]["price_change_manager"]

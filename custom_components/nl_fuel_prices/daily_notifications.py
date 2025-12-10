@@ -30,12 +30,21 @@ class DailyNotificationManager:
         """Initialize notification manager."""
         self.hass = hass
         self._price_history: dict[str, list[dict[str, Any]]] = {}
-        self._cancel_tracker = None
+        self._cancel_trackers: dict[str, Any] = {}  # Track cancellers per entry
 
     async def setup(self, config_entry) -> None:
         """Set up daily notifications."""
+        entry_id = config_entry.entry_id
+        
         if not config_entry.data.get(CONF_DAILY_NOTIFICATION, False):
+            _LOGGER.info(f"Daily notifications disabled for entry {entry_id}")
             return
+
+        # Cancel existing tracker for this entry if it exists (for reload scenarios)
+        if entry_id in self._cancel_trackers:
+            _LOGGER.info(f"Cancelling existing notification tracker for entry {entry_id}")
+            self._cancel_trackers[entry_id]()
+            del self._cancel_trackers[entry_id]
 
         notification_time = config_entry.data.get(
             CONF_DAILY_NOTIFICATION_TIME, DEFAULT_DAILY_TIME
@@ -49,7 +58,7 @@ class DailyNotificationManager:
             return
 
         # Schedule daily notification
-        self._cancel_tracker = async_track_time_change(
+        cancel_tracker = async_track_time_change(
             self.hass,
             self._send_daily_notification,
             hour=hour,
@@ -57,7 +66,9 @@ class DailyNotificationManager:
             second=second,
         )
         
-        _LOGGER.info(f"Daily fuel price notification scheduled for {notification_time}")
+        self._cancel_trackers[entry_id] = cancel_tracker
+        
+        _LOGGER.info(f"Daily fuel price notification scheduled for {notification_time} (entry: {entry_id})")
 
     async def _send_daily_notification(self, now: datetime) -> None:
         """Send daily fuel price report."""
@@ -531,5 +542,6 @@ class DailyNotificationManager:
 
     def shutdown(self) -> None:
         """Clean up resources."""
-        if self._cancel_tracker:
-            self._cancel_tracker()
+        for entry_id, cancel_tracker in self._cancel_trackers.items():
+            cancel_tracker()
+        self._cancel_trackers.clear()
