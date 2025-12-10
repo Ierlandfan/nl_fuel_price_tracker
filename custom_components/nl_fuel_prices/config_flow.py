@@ -210,10 +210,6 @@ class FuelPricesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class FuelPricesOptionsFlow(config_entries.OptionsFlow):
     """Handle options flow for Dutch Fuel Prices."""
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialize options flow."""
-        self.config_entry = config_entry
-
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
