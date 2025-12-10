@@ -37,9 +37,10 @@ async def async_setup_entry(
     
     fuel_type = entry.data.get("fuel_type", "euro95")
     location_name = entry.data.get("location_name", "Unknown")
+    postcode = entry.data.get("postcode", location_name)  # Fallback to location_name for old configs
     
     sensors = [
-        FuelPriceSensor(coordinator, fuel_type, location_name, is_main=True)
+        FuelPriceSensor(coordinator, fuel_type, location_name, postcode, is_main=True)
     ]
     
     # Dynamically add sensors based on actual stations found (up to max 5 total)
@@ -49,7 +50,7 @@ async def async_setup_entry(
     # Add sensors for alternative stations (stations 1 onwards, as station 0 is the main/cheapest)
     for i in range(1, num_stations):
         sensors.append(
-            FuelStationSensor(coordinator, fuel_type, location_name, i)
+            FuelStationSensor(coordinator, fuel_type, location_name, postcode, i)
         )
     
     async_add_entities(sensors)
@@ -66,6 +67,7 @@ class FuelPriceSensor(CoordinatorEntity, SensorEntity):
         coordinator: FuelPriceCoordinator,
         fuel_type: str,
         location_name: str,
+        postcode: str,
         is_main: bool = False,
     ) -> None:
         """Initialize the sensor."""
@@ -73,13 +75,13 @@ class FuelPriceSensor(CoordinatorEntity, SensorEntity):
         self._fuel_type = fuel_type
         self._location_name = location_name
         self._is_main = is_main
-        self._attr_unique_id = f"{DOMAIN}_{fuel_type}_{location_name}"
+        self._attr_unique_id = f"{DOMAIN}_{fuel_type}_{postcode}"
         self._attr_name = f"{location_name} - {FUEL_TYPES.get(fuel_type, fuel_type)}"
         self._attr_entity_registry_enabled_default = True  # Explicitly enable
         
         # Set up device info for grouping
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"{fuel_type}_{location_name}")},
+            identifiers={(DOMAIN, f"{fuel_type}_{postcode}")},
             name=f"{location_name} - {FUEL_TYPES.get(fuel_type, fuel_type)}",
             manufacturer="DirectLease",
             model="Fuel Price Tracker",
@@ -168,6 +170,7 @@ class FuelStationSensor(CoordinatorEntity, SensorEntity):
         coordinator: FuelPriceCoordinator,
         fuel_type: str,
         location_name: str,
+        postcode: str,
         index: int,
     ) -> None:
         """Initialize the station sensor."""
@@ -175,12 +178,12 @@ class FuelStationSensor(CoordinatorEntity, SensorEntity):
         self._fuel_type = fuel_type
         self._location_name = location_name
         self._index = index
-        self._attr_unique_id = f"{DOMAIN}_{fuel_type}_{location_name}_station_{index}"
+        self._attr_unique_id = f"{DOMAIN}_{fuel_type}_{postcode}_station_{index}"
         self._attr_entity_registry_enabled_default = True  # Explicitly enable all stations
         
         # Set up device info for grouping (same device as main sensor)
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"{fuel_type}_{location_name}")},
+            identifiers={(DOMAIN, f"{fuel_type}_{postcode}")},
             name=f"{location_name} - {FUEL_TYPES.get(fuel_type, fuel_type)}",
             manufacturer="DirectLease",
             model="Fuel Price Tracker",
