@@ -190,14 +190,43 @@ After clicking:
 
 To get enhanced Telegram notifications with maps and navigation:
 
+#### Option 1: Using telegram_bot.send_message (Recommended)
+
 1. **Set up Telegram bot** in Home Assistant:
    ```yaml
    # configuration.yaml
    telegram_bot:
-     - platform: polling
+     - platform: polling  # or 'broadcast' if you only send messages
        api_key: YOUR_BOT_API_KEY  # Get from @BotFather on Telegram
        allowed_chat_ids:
-         - YOUR_CHAT_ID  # Get from @userinfobot
+         - YOUR_CHAT_ID  # Get from @userinfobot (e.g., 123456789)
+   ```
+
+2. **Restart Home Assistant**
+
+3. **Configure fuel integration**:
+   - Go to **Settings** → **Devices & Services** → **Dutch Fuel Prices**
+   - Click **Configure**
+   - In **Notification Services**, type: `telegram_bot`
+   - Enable notifications (daily or price change alerts)
+   - Click **Submit**
+
+4. **You'll now get enhanced Telegram notifications** with:
+   - 📍 GPS location of station
+   - 🗺️ "Open in Google Maps" button
+   - 🧭 "Navigate" button
+   - 🎨 HTML formatted messages
+
+#### Option 2: Using notify.telegram
+
+1. **Set up Telegram bot and notify service**:
+   ```yaml
+   # configuration.yaml
+   telegram_bot:
+     - platform: polling
+       api_key: YOUR_BOT_API_KEY
+       allowed_chat_ids:
+         - YOUR_CHAT_ID
    
    notify:
      - name: telegram
@@ -208,8 +237,21 @@ To get enhanced Telegram notifications with maps and navigation:
 2. **Restart Home Assistant**
 
 3. **Configure fuel integration**:
-   - In integration settings, select **"telegram"** as notification service
-   - You'll now get notifications with GPS location, maps, and navigation buttons!
+   - In integration settings, select **"telegram"** from notification services dropdown
+   - Enhanced features will work, but with slightly different formatting
+
+#### How to Get Telegram Credentials
+
+1. **Get Bot API Key**:
+   - Open Telegram and search for `@BotFather`
+   - Send `/newbot` and follow instructions
+   - Copy the **API token** (looks like: `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)
+
+2. **Get Your Chat ID**:
+   - Search for `@userinfobot` in Telegram
+   - Send `/start`
+   - Copy your **Chat ID** (a number like: `123456789`)
+
 
 ### Multiple Locations
 

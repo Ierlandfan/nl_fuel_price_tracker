@@ -218,73 +218,168 @@ class DailyNotificationManager:
         """Send notification to all configured services with Telegram enhancements."""
         for service in services:
             try:
-                # Support both 'notify.mobile_app_phone' and 'mobile_app_phone' formats
-                if not service.startswith("notify."):
-                    service = f"notify.{service}"
-                
-                notification_data = {
-                    "title": title,
-                    "message": message,
-                    "data": {
-                        "priority": "normal",
-                        "notification_icon": "mdi:gas-station",
+                # Check if using telegram_bot service (direct) or notify service
+                if service == "telegram_bot" or service.startswith("telegram_bot."):
+                    await self._send_telegram_bot_notification(
+                        title, message, cheapest_station, top_stations
+                    )
+                elif "telegram" in service.lower():
+                    # Support both 'notify.telegram' and 'telegram' formats
+                    if not service.startswith("notify."):
+                        service = f"notify.{service}"
+                    await self._send_telegram_notify_notification(
+                        service, title, message, cheapest_station, top_stations
+                    )
+                else:
+                    # Standard notify service (mobile_app, etc.)
+                    if not service.startswith("notify."):
+                        service = f"notify.{service}"
+                    
+                    notification_data = {
+                        "title": title,
+                        "message": message,
+                        "data": {
+                            "priority": "normal",
+                            "notification_icon": "mdi:gas-station",
+                        },
+                    }
+                    
+                    await self.hass.services.async_call(
+                        "notify",
+                        service.replace("notify.", ""),
+                        notification_data,
+                    )
+                    _LOGGER.info(f"Sent daily report via {service}")
+            except Exception as err:
+                _LOGGER.error(f"Failed to send notification via {service}: {err}")
+    
+    async def _send_telegram_bot_notification(
+        self,
+        title: str,
+        message: str,
+        cheapest_station: dict[str, Any] | None = None,
+        top_stations: list[dict[str, Any]] | None = None,
+    ) -> None:
+        """Send notification using telegram_bot.send_message service."""
+        # Format message with HTML
+        formatted_message = message
+        if cheapest_station:
+            formatted_message = self._format_html_daily_message(
+                message, cheapest_station, top_stations
+            )
+        
+        # Build inline keyboard
+        inline_keyboard = None
+        if cheapest_station:
+            lat = cheapest_station.get("latitude")
+            lon = cheapest_station.get("longitude")
+            if lat and lon:
+                inline_keyboard = [
+                    [["🗺️ Open in Google Maps", f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"]],
+                    [["🧭 Navigate", f"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}"]]
+                ]
+        
+        # Send main message
+        telegram_data = {
+            "message": f"<b>{title}</b>\n\n{formatted_message}",
+            "parse_mode": "html",
+        }
+        
+        if inline_keyboard:
+            telegram_data["inline_keyboard"] = inline_keyboard
+        
+        await self.hass.services.async_call(
+            "telegram_bot",
+            "send_message",
+            telegram_data,
+            blocking=False,
+        )
+        
+        # Send location separately for better map display
+        if cheapest_station:
+            lat = cheapest_station.get("latitude")
+            lon = cheapest_station.get("longitude")
+            if lat and lon:
+                await self.hass.services.async_call(
+                    "telegram_bot",
+                    "send_location",
+                    {
+                        "latitude": lat,
+                        "longitude": lon,
                     },
-                }
-                
-                # Enhanced Telegram features
-                if "telegram" in service.lower():
-                    notification_data["data"]["parse_mode"] = "HTML"
-                    
-                    # Format message with HTML
-                    if cheapest_station:
-                        notification_data["message"] = self._format_html_daily_message(
-                            message, cheapest_station, top_stations
-                        )
-                    
-                    # Add location for cheapest station
-                    if cheapest_station:
-                        lat = cheapest_station.get("latitude")
-                        lon = cheapest_station.get("longitude")
-                        if lat and lon:
-                            # Send location as separate message
-                            await self.hass.services.async_call(
-                                "notify",
-                                service.replace("notify.", ""),
-                                {
-                                    "message": "📍 Cheapest Station Location",
-                                    "data": {
-                                        "location": {
-                                            "latitude": lat,
-                                            "longitude": lon,
-                                        }
-                                    }
-                                },
-                            )
-                            
-                            # Add inline keyboard with navigation
-                            notification_data["data"]["inline_keyboard"] = [
-                                [
-                                    {
-                                        "text": "🗺️ Open in Google Maps",
-                                        "url": f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"
-                                    }
-                                ],
-                                [
-                                    {
-                                        "text": "🧭 Navigate",
-                                        "url": f"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}"
-                                    }
-                                ]
-                            ]
-                
+                    blocking=False,
+                )
+        
+        _LOGGER.info("Sent daily report via telegram_bot")
+    
+    async def _send_telegram_notify_notification(
+        self,
+        service: str,
+        title: str,
+        message: str,
+        cheapest_station: dict[str, Any] | None = None,
+        top_stations: list[dict[str, Any]] | None = None,
+    ) -> None:
+        """Send notification using notify.telegram service."""
+        notification_data = {
+            "title": title,
+            "message": message,
+            "data": {
+                "priority": "normal",
+                "notification_icon": "mdi:gas-station",
+            },
+        }
+        
+        # Format message with HTML
+        if cheapest_station:
+            notification_data["message"] = self._format_html_daily_message(
+                message, cheapest_station, top_stations
+            )
+        
+        # Add location and inline keyboard if available
+        if cheapest_station:
+            lat = cheapest_station.get("latitude")
+            lon = cheapest_station.get("longitude")
+            if lat and lon:
+                # Send location as separate message
                 await self.hass.services.async_call(
                     "notify",
                     service.replace("notify.", ""),
-                    notification_data,
+                    {
+                        "message": "📍 Cheapest Station Location",
+                        "data": {
+                            "location": {
+                                "latitude": lat,
+                                "longitude": lon,
+                            }
+                        }
+                    },
+                    blocking=False,
                 )
-                _LOGGER.info(f"Sent daily report via {service}")
-            except Exception as err:
-                _LOGGER.error(f"Failed to send notification via {service}: {err}")
+                
+                # Add inline keyboard with navigation
+                notification_data["data"]["inline_keyboard"] = [
+                    [
+                        {
+                            "text": "🗺️ Open in Google Maps",
+                            "url": f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"
+                        }
+                    ],
+                    [
+                        {
+                            "text": "🧭 Navigate",
+                            "url": f"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}"
+                        }
+                    ]
+                ]
+        
+        await self.hass.services.async_call(
+            "notify",
+            service.replace("notify.", ""),
+            notification_data,
+            blocking=False,
+        )
+        _LOGGER.info(f"Sent daily report via {service}")
     
     def _format_html_daily_message(
         self,

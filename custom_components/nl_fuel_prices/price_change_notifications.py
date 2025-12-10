@@ -102,68 +102,148 @@ class PriceChangeNotificationManager:
         """Send notification to all configured services with Telegram enhancements."""
         for service in services:
             try:
-                notification_data = {
-                    "title": title,
-                    "message": message,
-                }
-                
-                # Enhanced Telegram features
-                if "telegram" in service.lower():
-                    notification_data["data"] = {
-                        "parse_mode": "HTML",
+                # Check if using telegram_bot service (direct) or notify service
+                if service == "telegram_bot" or service.startswith("telegram_bot."):
+                    await self._send_telegram_bot_notification(
+                        title, message, station_data
+                    )
+                elif "telegram" in service.lower():
+                    # Support both 'notify.telegram' and 'telegram' formats
+                    if not service.startswith("notify."):
+                        service = f"notify.{service}"
+                    await self._send_telegram_notify_notification(
+                        service, title, message, station_data
+                    )
+                else:
+                    # Standard notify service (mobile_app, etc.)
+                    if not service.startswith("notify."):
+                        service = f"notify.{service}"
+                    
+                    notification_data = {
+                        "title": title,
+                        "message": message,
                     }
                     
-                    # Add location if available
-                    if station_data:
-                        lat = station_data.get("latitude")
-                        lon = station_data.get("longitude")
-                        if lat and lon:
-                            # Send location separately for better map display
-                            await self.hass.services.async_call(
-                                "notify",
-                                service,
-                                {
-                                    "message": "📍 Station Location",
-                                    "data": {
-                                        "location": {
-                                            "latitude": lat,
-                                            "longitude": lon,
-                                        }
-                                    }
-                                },
-                                blocking=False,
-                            )
-                        
-                        # Add inline keyboard with navigation buttons
-                        station_name = station_data.get("name", "Station")
-                        address = station_data.get("address", "")
-                        if lat and lon:
-                            notification_data["data"]["inline_keyboard"] = [
-                                [
-                                    {
-                                        "text": "🗺️ Open in Google Maps",
-                                        "url": f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"
-                                    }
-                                ],
-                                [
-                                    {
-                                        "text": "🧭 Navigate",
-                                        "url": f"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}"
-                                    }
-                                ]
-                            ]
-                    
-                    # Format message with HTML for better readability
-                    notification_data["message"] = self._format_html_message(message, station_data)
-                
-                await self.hass.services.async_call(
-                    "notify",
-                    service,
-                    notification_data,
-                    blocking=False,
-                )
+                    await self.hass.services.async_call(
+                        "notify",
+                        service.replace("notify.", ""),
+                        notification_data,
+                        blocking=False,
+                    )
             except Exception as err:
                 _LOGGER.error("Failed to send notification to %s: %s", service, err)
+    
+    async def _send_telegram_bot_notification(
+        self,
+        title: str,
+        message: str,
+        station_data: dict[str, Any] | None = None,
+    ) -> None:
+        """Send notification using telegram_bot.send_message service."""
+        # Format message with HTML
+        formatted_message = self._format_html_message(message, station_data)
+        
+        # Build inline keyboard
+        inline_keyboard = None
+        if station_data:
+            lat = station_data.get("latitude")
+            lon = station_data.get("longitude")
+            if lat and lon:
+                inline_keyboard = [
+                    [["🗺️ Open in Google Maps", f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"]],
+                    [["🧭 Navigate", f"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}"]]
+                ]
+        
+        # Send main message
+        telegram_data = {
+            "message": f"<b>{title}</b>\n\n{formatted_message}",
+            "parse_mode": "html",
+        }
+        
+        if inline_keyboard:
+            telegram_data["inline_keyboard"] = inline_keyboard
+        
+        await self.hass.services.async_call(
+            "telegram_bot",
+            "send_message",
+            telegram_data,
+            blocking=False,
+        )
+        
+        # Send location separately for better map display
+        if station_data:
+            lat = station_data.get("latitude")
+            lon = station_data.get("longitude")
+            if lat and lon:
+                await self.hass.services.async_call(
+                    "telegram_bot",
+                    "send_location",
+                    {
+                        "latitude": lat,
+                        "longitude": lon,
+                    },
+                    blocking=False,
+                )
+    
+    async def _send_telegram_notify_notification(
+        self,
+        service: str,
+        title: str,
+        message: str,
+        station_data: dict[str, Any] | None = None,
+    ) -> None:
+        """Send notification using notify.telegram service."""
+        notification_data = {
+            "title": title,
+            "message": self._format_html_message(message, station_data),
+            "data": {
+                "parse_mode": "HTML",
+            },
+        }
+        
+        # Add location and inline keyboard if available
+        if station_data:
+            lat = station_data.get("latitude")
+            lon = station_data.get("longitude")
+            if lat and lon:
+                # Send location separately for better map display
+                await self.hass.services.async_call(
+                    "notify",
+                    service.replace("notify.", ""),
+                    {
+                        "message": "📍 Station Location",
+                        "data": {
+                            "location": {
+                                "latitude": lat,
+                                "longitude": lon,
+                            }
+                        }
+                    },
+                    blocking=False,
+                )
+                
+                # Add inline keyboard with navigation buttons
+                notification_data["data"]["inline_keyboard"] = [
+                    [
+                        {
+                            "text": "🗺️ Open in Google Maps",
+                            "url": f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"
+                        }
+                    ],
+                    [
+                        {
+                            "text": "🧭 Navigate",
+                            "url": f"https://www.google.com/maps/dir/?api=1&destination={lat},{lon}"
+                        }
+                    ]
+                ]
+        
+        await self.hass.services.async_call(
+            "notify",
+            service.replace("notify.", ""),
+            notification_data,
+            blocking=False,
+        )
 
     def _format_html_message(self, message: str, station_data: dict[str, Any] | None) -> str:
         """Format message with HTML for Telegram."""
