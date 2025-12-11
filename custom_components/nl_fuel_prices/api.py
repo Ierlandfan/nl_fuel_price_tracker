@@ -166,41 +166,6 @@ class FuelPriceAPI:
                     
                     detail_data = await response.json()
                     
-                    # Debug: log available fields (including Dutch field names)
-                    _LOGGER.debug(f"Station {station_id} ALL fields: {list(detail_data.keys())}")
-                    
-                    # Check for facilities/voorzieningen
-                    if "facilities" in detail_data:
-                        _LOGGER.debug(f"Facilities: {detail_data['facilities']}")
-                    if "voorzieningen" in detail_data:
-                        _LOGGER.debug(f"Voorzieningen: {detail_data['voorzieningen']}")
-                    
-                    # Check for unmanned/onbemand
-                    if "unmanned" in detail_data:
-                        _LOGGER.debug(f"Unmanned: {detail_data['unmanned']}")
-                    if "onbemand" in detail_data:
-                        _LOGGER.debug(f"Onbemand: {detail_data['onbemand']}")
-                    
-                    # Check for shop/winkel
-                    if "shop" in detail_data:
-                        _LOGGER.debug(f"Shop: {detail_data['shop']}")
-                    if "hasShop" in detail_data:
-                        _LOGGER.debug(f"HasShop: {detail_data['hasShop']}")
-                    if "winkel" in detail_data:
-                        _LOGGER.debug(f"Winkel: {detail_data['winkel']}")
-                    
-                    # Check opening hours variations
-                    if "openingTimes" in detail_data:
-                        _LOGGER.debug(f"OpeningTimes: {detail_data['openingTimes']}")
-                    if "openingstijden" in detail_data:
-                        _LOGGER.debug(f"Openingstijden: {detail_data['openingstijden']}")
-                    if "openingHours" in detail_data:
-                        _LOGGER.debug(f"OpeningHours: {detail_data['openingHours']}")
-                    
-                    # Log full JSON for first station (to see everything)
-                    if station_id == nearby_stations[0]["id"]:
-                        _LOGGER.debug(f"FULL STATION DATA: {json.dumps(detail_data, indent=2)}")
-                    
                     # Find matching fuel price
                     fuels = detail_data.get("fuels", [])
                     matching_price = None
