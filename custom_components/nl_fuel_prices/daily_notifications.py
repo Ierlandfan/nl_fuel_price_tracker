@@ -94,6 +94,20 @@ class DailyNotificationManager:
                 _LOGGER.debug(f"Daily notification not enabled for {entry_id}")
                 continue
             
+            # Check if the notification time matches this entry's configured time
+            notification_time = config_entry.data.get(
+                CONF_DAILY_NOTIFICATION_TIME, DEFAULT_DAILY_TIME
+            )
+            try:
+                hour, minute, second = map(int, notification_time.split(":"))
+                # Only send if current time matches configured time
+                if now.hour != hour or now.minute != minute:
+                    _LOGGER.debug(f"Skipping {entry_id} - time mismatch (configured: {notification_time}, current: {now.hour:02d}:{now.minute:02d})")
+                    continue
+            except ValueError:
+                _LOGGER.error(f"Invalid notification time for {entry_id}: {notification_time}")
+                continue
+            
             # Check if notification should be sent today
             notify_days = config_entry.data.get(
                 CONF_DAILY_NOTIFICATION_DAYS, DEFAULT_DAILY_DAYS
