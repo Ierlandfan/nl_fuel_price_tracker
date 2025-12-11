@@ -206,9 +206,34 @@ class DailyNotificationManager:
         
         # Top 3 cheapest stations
         if len(all_stations) > 1:
-            message += "💰 Top 3 Cheapest:\n"
+            message += "💰 Top 3 Cheapest:\n\n"
             for idx, station in enumerate(all_stations[:3], 1):
                 message += f"{idx}. {station.get('name')} - €{station.get('price'):.3f} ({station.get('distance')}km)\n"
+                
+                # Add station type and services
+                is_unmanned = station.get('is_unmanned', False)
+                has_shop = station.get('has_shop', False)
+                
+                if is_unmanned:
+                    message += f"   🤖 Unmanned"
+                else:
+                    message += f"   👤 Manned"
+                
+                if has_shop:
+                    message += f" | 🏪 Shop"
+                    shop_hours = station.get('shop_hours')
+                    if shop_hours:
+                        from datetime import datetime
+                        day_names = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+                        today = day_names[datetime.now().weekday()]
+                        if today in shop_hours:
+                            hours = shop_hours[today]
+                            start = self._format_time(hours[0])
+                            end = self._format_time(hours[1])
+                            message += f" ({start}-{end})"
+                
+                message += "\n"
+            
             message += "\n"
         
         # Price range
