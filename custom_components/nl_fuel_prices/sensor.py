@@ -134,6 +134,11 @@ class FuelPriceSensor(CoordinatorEntity, SensorEntity):
             "location_postcode": self.coordinator.entry.data.get("town_postcode"),
             "location_province": self.coordinator.entry.data.get("town_province"),
             "radius": self.coordinator.entry.data.get("radius", 10),
+            # Services information
+            "is_unmanned": cheapest.get("is_unmanned", False),
+            "has_shop": cheapest.get("has_shop", False),
+            "services": cheapest.get("services", []),
+            "shop_hours": cheapest.get("shop_hours"),
         }
         
         # Add alternative stations (top 5)
@@ -147,6 +152,9 @@ class FuelPriceSensor(CoordinatorEntity, SensorEntity):
                     "price": station.get("price"),
                     "distance": station.get("distance"),
                     "address": station.get("address"),
+                    "is_unmanned": station.get("is_unmanned", False),
+                    "has_shop": station.get("has_shop", False),
+                    "services": station.get("services", []),
                 })
             attributes["alternatives"] = alternatives
             attributes["alternative_count"] = len(alternatives)
@@ -237,6 +245,11 @@ class FuelStationSensor(CoordinatorEntity, SensorEntity):
             "fuel_type": FUEL_TYPES.get(self._fuel_type, self._fuel_type),
             "location_postcode": self.coordinator.entry.data.get("town_postcode"),
             "location_province": self.coordinator.entry.data.get("town_province"),
+            # Services information
+            "is_unmanned": station.get("is_unmanned", False),
+            "has_shop": station.get("has_shop", False),
+            "services": station.get("services", []),
+            "shop_hours": station.get("shop_hours"),
         }
 
     @property
