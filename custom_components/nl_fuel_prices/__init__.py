@@ -25,6 +25,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Dutch Fuel Prices from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     
+    # Migrate old entries that don't have postcode field
+    if "postcode" not in entry.data and "location_name" in entry.data:
+        # Extract postcode from location_name if it's in format "1234AB (City)"
+        location_name = entry.data["location_name"]
+        # If location_name looks like a postcode or contains one, try to extract it
+        if "(" in location_name and ")" in location_name:
+            # Format: "1234AB (City)" - extract postcode
+            postcode = location_name.split("(")[0].strip()
+        else:
+            # Use location_name as postcode for backward compatibility
+            postcode = location_name
+        
+        # Update entry data with postcode
+        new_data = {**entry.data, "postcode": postcode}
+        hass.config_entries.async_update_entry(entry, data=new_data)
+        _LOGGER.info(f"Migrated entry {entry.entry_id} to include postcode: {postcode}")
+    
     # Initialize daily notification manager if not already done
     if "daily_manager" not in hass.data[DOMAIN]:
         daily_manager = DailyNotificationManager(hass)
