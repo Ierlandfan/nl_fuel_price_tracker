@@ -57,43 +57,126 @@ class DailyNotificationManager:
             _LOGGER.error(f"Invalid notification time: {notification_time}")
             return
 
-        # Schedule daily notification
+        # Schedule daily notification - use closure to capture entry_id
+        async def entry_notification_callback(now: datetime) -> None:
+            """Callback that sends notification for specific entry."""
+            await self._send_entry_notification(now, entry_id)
+
         cancel_tracker = async_track_time_change(
             self.hass,
-            self._send_daily_notification,
+            entry_notification_callback,
             hour=hour,
             minute=minute,
             second=second,
         )
-        
+
         self._cancel_trackers[entry_id] = cancel_tracker
-        
+
         _LOGGER.info(f"Daily fuel price notification scheduled for {notification_time} (entry: {entry_id})")
 
-    async def _send_daily_notification(self, now: datetime) -> None:
-        """Send daily fuel price report."""
-        _LOGGER.info(f"Daily notification triggered at {now}")
-        
+    async def _send_entry_notification(self, now: datetime, entry_id: str) -> None:
+        """Send daily fuel price report for a specific entry.
+
+        This method is called by the entry-specific time tracker callback.
+        It only processes the single entry that triggered the callback,
+        preventing duplicate notifications when multiple entries have the same time.
+        """
+        _LOGGER.info(f"Daily notification triggered for entry {entry_id} at {now}")
+
         # Check if today is in configured days
         day_names = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
         current_day = day_names[now.weekday()]
         _LOGGER.debug(f"Current day: {current_day}")
-        
+
+        # Get the specific coordinator for this entry
+        coordinator = self.hass.data.get(DOMAIN, {}).get(entry_id)
+        if not coordinator or not hasattr(coordinator, 'entry'):
+            _LOGGER.warning(f"Coordinator not found for entry {entry_id}")
+            return
+
+        config_entry = coordinator.entry
+
+        # Skip if daily notification not enabled
+        if not config_entry.data.get(CONF_DAILY_NOTIFICATION, False):
+            _LOGGER.debug(f"Daily notification not enabled for {entry_id}")
+            return
+
+        # Check if notification should be sent today
+        notify_days = config_entry.data.get(
+            CONF_DAILY_NOTIFICATION_DAYS, DEFAULT_DAILY_DAYS
+        )
+        _LOGGER.debug(f"Notify days: {notify_days}, Current day: {current_day}")
+        if current_day not in notify_days:
+            _LOGGER.info(f"Skipping notification for {entry_id} - not scheduled for {current_day}")
+            return
+
+        # Get current data
+        data = coordinator.data
+        if not data:
+            _LOGGER.warning(f"No data available for {entry_id}")
+            return
+
+        cheapest = data.get("cheapest")
+        if not cheapest:
+            _LOGGER.warning(f"No cheapest station found for {entry_id}")
+            return
+
+        _LOGGER.info(f"Preparing daily notification for {entry_id}")
+
+        # Get historical data
+        price_week_ago = await self._get_price_week_ago(entry_id, cheapest)
+
+        # Build notification message
+        message = await self._build_daily_message(
+            cheapest, price_week_ago, data.get("stations", []), config_entry
+        )
+
+        # Send notification
+        notify_services = config_entry.data.get(CONF_NOTIFY_SERVICES, [])
+        stations = data.get("stations", [])
+        _LOGGER.info(f"Notify services configured: {notify_services}")
+
+        if notify_services:
+            _LOGGER.info(f"Sending daily notification to {len(notify_services)} service(s)")
+            await self._send_notifications(
+                notify_services,
+                "⛽ Daily Fuel Report",
+                message,
+                cheapest,
+                stations[:3] if len(stations) > 0 else []
+            )
+
+        # Fire event
+        await self._fire_daily_report_event(cheapest, price_week_ago, data, config_entry)
+
+    async def _send_daily_notification(self, now: datetime) -> None:
+        """Send daily fuel price report (legacy method for backwards compatibility).
+
+        Note: This method loops through all coordinators and is kept for compatibility.
+        New code should use _send_entry_notification which handles a single entry.
+        """
+        _LOGGER.info(f"Daily notification triggered at {now}")
+
+        # Check if today is in configured days
+        day_names = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+        current_day = day_names[now.weekday()]
+        _LOGGER.debug(f"Current day: {current_day}")
+
         # Get all fuel price coordinators (skip manager entries)
         coordinators = self.hass.data.get(DOMAIN, {})
-        
+
         for entry_id, coordinator in coordinators.items():
             # Skip non-coordinator entries (managers, scheduled, etc.)
             if not hasattr(coordinator, 'entry'):
                 continue
-                
+
             config_entry = coordinator.entry
-            
+
             # Skip if daily notification not enabled
             if not config_entry.data.get(CONF_DAILY_NOTIFICATION, False):
                 _LOGGER.debug(f"Daily notification not enabled for {entry_id}")
                 continue
-            
+
             # Check if the notification time matches this entry's configured time
             notification_time = config_entry.data.get(
                 CONF_DAILY_NOTIFICATION_TIME, DEFAULT_DAILY_TIME
@@ -107,7 +190,7 @@ class DailyNotificationManager:
             except ValueError:
                 _LOGGER.error(f"Invalid notification time for {entry_id}: {notification_time}")
                 continue
-            
+
             # Check if notification should be sent today
             notify_days = config_entry.data.get(
                 CONF_DAILY_NOTIFICATION_DAYS, DEFAULT_DAILY_DAYS
@@ -116,43 +199,43 @@ class DailyNotificationManager:
             if current_day not in notify_days:
                 _LOGGER.info(f"Skipping notification for {entry_id} - not scheduled for {current_day}")
                 continue
-            
+
             # Get current data
             data = coordinator.data
             if not data:
                 _LOGGER.warning(f"No data available for {entry_id}")
                 continue
-            
+
             cheapest = data.get("cheapest")
             if not cheapest:
                 _LOGGER.warning(f"No cheapest station found for {entry_id}")
                 continue
-            
+
             _LOGGER.info(f"Preparing daily notification for {entry_id}")
-            
+
             # Get historical data
             price_week_ago = await self._get_price_week_ago(entry_id, cheapest)
-            
+
             # Build notification message
             message = await self._build_daily_message(
                 cheapest, price_week_ago, data.get("stations", []), config_entry
             )
-            
+
             # Send notification
             notify_services = config_entry.data.get(CONF_NOTIFY_SERVICES, [])
             stations = data.get("stations", [])
             _LOGGER.info(f"Notify services configured: {notify_services}")
-            
+
             if notify_services:
                 _LOGGER.info(f"Sending daily notification to {len(notify_services)} service(s)")
                 await self._send_notifications(
-                    notify_services, 
-                    "⛽ Daily Fuel Report", 
+                    notify_services,
+                    "⛽ Daily Fuel Report",
                     message,
                     cheapest,
                     stations[:3] if len(stations) > 0 else []
                 )
-            
+
             # Fire event
             await self._fire_daily_report_event(cheapest, price_week_ago, data, config_entry)
 
